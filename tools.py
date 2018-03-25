@@ -9,7 +9,7 @@ def get_valid_input(input_string, valid_options):
         response = input(input_string)
     return response
 
-def EditJob(job_list, job_id):
+def edit_job(job_list, job_id):
 
     temp_job_object = None
     parameter = None
@@ -35,10 +35,10 @@ def EditJob(job_list, job_id):
           PrintSheetSize  (5)  {}
                  Comment  (6)  {}
                   Status  (7)  {}
-                 Urgency  (8)  {}
+                Priority  (8)  {}
 
 Choose the Parameter to Edit: """.format(i.id, i.addedDate, i.customer, i.product, i.amount, i.material, \
-                        i.printing_sheet_size, i.comment, i.status, i.urgency), ("1", "2", "3", "4", "5", "6", "7", "8"))
+                        i.printing_sheet_size, i.comment, i.status, i.priority), ("1", "2", "3", "4", "5", "6", "7", "8"))
             break
 
     def edit(object_to_edit, parameter):    
@@ -85,38 +85,39 @@ Choose the Parameter to Edit: """.format(i.id, i.addedDate, i.customer, i.produc
         elif parameter == "8":  # Urgency
             n = get_valid_input("""
             Add new value for URGENCY (1=Extremely Urgent, 2=Very Urgent, 3=Urgent, 0=Normal) """, ("1", "2", "3", "0"))
-            object_to_edit.urgency = int(n)                               
+            object_to_edit.priority = int(n)                               
 
     edit(temp_job_object, parameter)
 
 def gimme_my_todo_list(list_of_jobs):
+    """ At the moment this only takes out all "Waiting"-jobs and arranges all urgent jobs to the top by priority."""
 
-    urgency1_jobs = []
-    urgency2_jobs = []
-    urgency3_jobs = []
-    urgency0_jobs = []
+    priority1_jobs = []
+    priority2_jobs = []
+    priority3_jobs = []
+    priority0_jobs = []
     
     for i in list_of_jobs[1:]:
         if i.status == "Ready to Print":
-            if int(i.urgency) == 1:
-                urgency1_jobs.append(i)
-            elif int(i.urgency) == 2:
-                urgency2_jobs.append(i)
-            elif int(i.urgency) == 3:
-                urgency3_jobs.append(i)
-            elif int(i.urgency) == 0:
-                urgency0_jobs.append(i)
+            if int(i.priority) == 1:
+                priority1_jobs.append(i)
+            elif int(i.priority) == 2:
+                priority2_jobs.append(i)
+            elif int(i.priority) == 3:
+                priority3_jobs.append(i)
+            elif int(i.priority) == 0:
+                priority0_jobs.append(i)
 
     temp_list = []
     temp_list.append(list_of_jobs[0])
 
-    for i in urgency1_jobs:
+    for i in priority1_jobs:
         temp_list.append(i)
-    for i in urgency2_jobs:
+    for i in priority2_jobs:
         temp_list.append(i)
-    for i in urgency3_jobs:
+    for i in priority3_jobs:
         temp_list.append(i)
-    for i in urgency0_jobs:
+    for i in priority0_jobs:
         temp_list.append(i)
     
     return temp_list

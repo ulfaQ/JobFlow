@@ -1,5 +1,5 @@
-import time, datetime, os, pickle
-from tools import get_valid_input, gimme_my_todo_list, EditJob
+import time, datetime, os, pickle, sys
+from tools import get_valid_input, gimme_my_todo_list, edit_job
 
 print(""" 
          Welcome to:
@@ -9,7 +9,6 @@ print("""
           |   \ |  (  <_> )     /  
           \_  / |__|\____/ \/\_/   
             \/  I'm Your brain now.
-
    """)
 
 # Check to see if the current_job_list.txt exists. If not, create the file and add the info-object
@@ -23,6 +22,14 @@ try:
         pass
 except:
     with open("current_job_list.txt", "wb") as f:
+        pickle.dump([Info()], f, protocol=4, fix_imports=False)
+
+# check if hist_log exist, if not, create it.
+try:
+    with open("hist_log.txt", "rb") as f:
+        pass
+except:
+    with open("hist_log.txt", "wb") as f:
         pickle.dump([Info()], f, protocol=4, fix_imports=False)
 
 class JobList:
@@ -41,16 +48,15 @@ class JobList:
                 #Lisää tähän objektiin muualla tarvittavaa infoa
                 self.info = self.current_job_list[0]
 
-    # Funktio tiedoston päivitykseen
+    # Funktio tiedoston päivitykseen.
     def write_pickle_file(self):
         with open("current_job_list.txt", "wb") as f:
             pickle.dump(self.current_job_list, f, protocol=4, fix_imports=False)
+
     # Funktio töiden lisäämiseen.
     def add_job(self):
-        """ Ensin otetaan käyttäjältä inputit ja sen jälkeen luodaan Job-objekti annetuilla specseillä """
+        """ Ensin otetaan käyttäjältä inputit ja sen jälkeen luodaan Job-objekti annetuilla specseillä ja lisätän se listaan. """
 
-        # Tervitaanko näitä kaikkia?
-        # Tarvitaanko jotain lisää?
         prompted_info = {
             "customer"             : input("Customer: "),         
             "product"              : input("Product: "),
@@ -70,41 +76,45 @@ class JobList:
         """ Poistaa id:n perusteella valitun työn. """
         for i in self.current_job_list[1:]:
             if i.id == id_to_remove:
-                n = input("Are you sure you wan't to remove {} : {} : {} : {} : {} \
-                        - (y ,n): ".format(i.id, i.addedDate, i.customer, i.product, i.amount)).lower()
+
+                #Tallennetaan hist_logiin poistettu työ
+                temp_hist_log = None
+                with open("hist_log.txt", "rb") as f:
+                    temp_hist_log = pickle.load(f, fix_imports=False, encoding="ASCII", errors="strict")
+                temp_hist_log.append(i)
+                with open("hist_log.txt", "wb") as f:
+                    pickle.dump(temp_hist_log, f, protocol=4, fix_imports=False)
+                    
+                n = input("Are you sure you wan't to remove {} : {} : {} : {} : {} (y ,n): ".format("ID: ", i.id, i.customer, i.product, i.amount)).lower()
                 if n == "y":
                     self.current_job_list.remove(i)
 
     def show_jobs(self, job_list):
         print("""
-           ID:     ADDED:                  URG:   CUSTOMER:           PRODUCT:            AMOUNT:        SHEET:    COMMENT:""")
+           ID:     ADDED:                  URG:   CUSTOMER:           PRODUCT:            AMOUNT:        SHEET:    MATERIAL:         COMMENT:       STATUS:""")
         for i in job_list[1:]:
-            print("         -------------------------------------------------------------------------------------------------------------------------")
-            print("         | ", str(i.id).ljust(3), " | ", i.addedDate, " | ", str(i.urgency).ljust(2), " | ", \
-                    i.customer.ljust(15)[:15], " | ", i.product.ljust(15)[:15], " | ", i.amount.ljust(10)[:10], " | ", i.printing_sheet_size.ljust(5)[:5], " | ", i.comment.ljust(10)[:10], " | ")
-        print("         -------------------------------------------------------------------------------------------------------------------------\n")
+            print("     -------------------------------------------------------------------------------------------------------------------------------------------------------------")
+            print("     | ", str(i.id).ljust(3), " | ", i.addedDate, " | ", str(i.priority).ljust(2), " | ", \
+                    i.customer.ljust(15)[:15], " | ", i.product.ljust(15)[:15], " | ", i.amount.ljust(10)[:10], " | ", \
+                    i.printing_sheet_size.ljust(5)[:5], " | ", i.material.ljust(13)[:13], " | ", i.comment.ljust(10)[:10], " | ", i.status.ljust(14)[:14], " | ")
+        print("     -------------------------------------------------------------------------------------------------------------------------------------------------------------\n")
 
     def show_job(self, id_to_show):
         for i in self.current_job_list[1:]:
             if i.id == id_to_show:
                 print("""
-            ---------------------------------
-            Information of the job requested:
-            ---------------------------------
-
-                        Id: {}
-                     Added: {}
-                  Customer: {}
-                   Product: {}
-                    Amount: {}
-                  Material: {}
-            PrintSheetSize: {}
-                   Comment: {}
-                    Status: {}
-                   Urgency: {}
-                """.format(i.id, i.addedDate, i.customer, i.product, i.amount,\
-                        i.material, i.printing_sheet_size, i.comment, i.status, i.urgency))
-                break
+                   ----------------------------------------------------------------------------------------------------------------------------
+                   |        Id: {}       Customer: {}       Amount: {} |  
+                   ------------|---------------------------------|--------------------------------------------|--------------------------------
+                   |     Added: {}      Product: {}   Sheet size: {} |  
+                   ------------|---------------------------------|--------------------------------------------|--------------------------------
+                   |  Priority: {}       Material: {}       Status: {} | 
+                   ------------|---------------------------------|--------------------------------------------|--------------------------------
+                   |   Comment: {}|
+                   ----------------------------------------------------------------------------------------------------------------------------
+               """.format(str(i.id).ljust(17), i.customer.ljust(30), i.amount.ljust(30), \
+                       i.addedDate.ljust(17), i.product.ljust(30), i.printing_sheet_size.ljust(30), \
+                        str(i.priority).ljust(17), i.material.ljust(30), i.status.ljust(30), str(i.comment).ljust(110)))
 
     def _clear_job_list(self):
         self.current_job_list[1:] = []
@@ -122,7 +132,7 @@ class Job:
         self.comment = prompted_info.get("comment")
         self.addedDate = prompted_info.get("addedDate")
         self.id = prompted_info.get("current_id")
-        self.urgency = 0
+        self.priority = 0
 
         # Muokataan statusta siten että jos input on 2, kysytään syytä mitä odottaa,
         # Jos input on 1, laitetaan statukseksi ready to print
@@ -139,18 +149,18 @@ my_job_list.get_job_list_from_file()
 
 # Interface:
 while True:
-    n = input("What you wanna do? (M)enu: ")
+    n = input("Enter command:")
 
     if n.lower() == "m":
         print("""
-                                       --------------------------------------------
-          _____ _____ _____ _____ _    | (A) Add new Job    |  (D) Delete Job     | 
-         |     |   __|   | |  |  |_|   |--------------------|---------------------| 
-         | | | |   __| | | |  |  |_    | (L) List all Jobs  |  (E) Edit Job       | 
-         |_|_|_|_____|_|___|_____|_|   |--------------------|---------------------| 
-                                       | (O) Ordered List   |  (ID) Show Job-info | 
-                                       -------------------------------------------- 
-                        """)
+                                    --------------------------------------------------------------------
+       _____ _____ _____ _____ _    | (A) Add new Job   | (D) Delete Job      | (clear) Clear List     |
+      |     |   __|   | |  |  |_|   |-------------------|---------------------|------------------------|
+      | | | |   __| | | |  |  |_    | (L) List all Jobs | (E) Edit Job        | (H) Show all past Jobs | 
+      |_|_|_|_____|_|___|_____|_|   |-------------------|---------------------|------------------------| 
+                                    | (O) Ordered List  | (ID#) Show Job-info | (Q) Quit               | 
+                                    --------------------------------------------------------------------
+                     """)
 
     elif n.lower() == "a":
         print("ADD JOB:\n")
@@ -159,11 +169,11 @@ while True:
 
     elif n.lower() == "l":
         print("""
-                                   ___                _     _         _    _    _   _             _ 
-                                  / __|___ _ __  _ __| |___| |_ ___  | |  (_)__| |_(_)_ _  __ _  (_)
-                                 | (__/ _ \ '  \| '_ \ / -_)  _/ -_) | |__| (_-<  _| | ' \/ _` |  _ 
-                                  \___\___/_|_|_| .__/_\___|\__\___| |____|_/__/\__|_|_||_\__, | (_)
-                                                |_|                                       |___/""")      
+       ___                _     _         _    _    _   _             _ 
+      / __|___ _ __  _ __| |___| |_ ___  | |  (_)__| |_(_)_ _  __ _  (_)
+     | (__/ _ \ '  \| '_ \ / -_)  _/ -_) | |__| (_-<  _| | ' \/ _` |  _ 
+      \___\___/_|_|_| .__/_\___|\__\___| |____|_/__/\__|_|_||_\__, | (_)
+                    |_|                                       |___/""")      
         my_job_list.show_jobs(my_job_list.current_job_list)
 
     elif n.lower() == "d":
@@ -173,8 +183,22 @@ while True:
 
     elif n.lower() == "e":
         ed = int(input("Type the ID of the job you wan't to edit: "))
-        EditJob(my_job_list.current_job_list[1:], ed)
+        edit_job(my_job_list.current_job_list[1:], ed)
         my_job_list.write_pickle_file()
+
+    elif n.lower() == "h":
+        with open("hist_log.txt", "rb") as f:
+            hist = pickle.load(f, fix_imports=False, encoding="ASCII", errors="strict")
+            print("""
+             __  ___  __   __      
+     |__| | /__`  |  /  \ |__) \ / o
+     |  | | .__/  |  \__/ |  \  |  o                   
+                         """)
+            my_job_list.show_jobs(hist)
+
+    elif n.lower() == "q":
+        print("\nThank you for using Flow. See you soon!")
+        sys.exit()
 
     elif n.lower() == "clear":
         my_job_list._clear_job_list()
@@ -182,12 +206,11 @@ while True:
 
     elif n.lower() == "o":
         print("""
-                          _____ _                   __           _   _          _        _   _             _ 
-                         |_   _| |_  ___ _ _ ___   / _|___ _ _  | |_| |_  ___  | |_ __ _| |_(_)_ _  __ _  (_)
-                           | | | ' \/ -_) '_/ -_) |  _/ _ \ '_| |  _| ' \/ -_) |  _/ _` | / / | ' \/ _` |  _ 
-                           |_| |_||_\___|_| \___| |_| \___/_|    \__|_||_\___|  \__\__,_|_\_\_|_||_\__, | (_)
-                                                                                                   |___/""")
-
+                                  _ _     _      
+       __ _  ___ ___ ___  ___ ___(_) |__ | | ___  _ 
+      / _` |/ __/ __/ _ \/ __/ __| | '_ \| |/ _ \(_)
+     | (_| | (_| (_|  __/\__ \__ \ | |_) | |  __/ _ 
+      \__,_|\___\___\___||___/___/_|_.__/|_|\___|(_)        """)
         my_job_list.show_jobs(gimme_my_todo_list(my_job_list.current_job_list))
 
     else:
@@ -195,4 +218,4 @@ while True:
             int_n = int(n)
             my_job_list.show_job(int_n)
         except:
-            print(n, "is not a valid input. Try something else.")
+            print(n, "is not a valid input. See (M)enu for commands.")

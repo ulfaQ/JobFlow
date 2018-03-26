@@ -10,67 +10,75 @@ def get_valid_input(input_string, valid_options):
     return response
 
 def edit_job(job_list, job_id):
+    # Palauttaa prompted info objektin jota käytetään luomaan uusi Job vanhan tilalle (sama objekti mutta vain yhdellä muokatulla parametrillä. 
+    # if input == "n" kohdassa jobflow.py:n loppupuolella. Kutsutaan tätä funktiota.
 
+    temp_prompted_info = None
     temp_job_object = None
     parameter = None
 
     #etsitään listasta oikea Job-objekti --> temp_job_object, ja kysytään mitä parametria halutaan muokata --> parameter
     for i in job_list:
+        print("For i in job list")
        
         if i.id == int(job_id):
             temp_job_object = i
+            temp_prompted_info = i.prompted_info
+            print("Customer is: ", i.prompted_info["customer"])
 
             parameter = get_valid_input("""
-          -----------------------------------------
-          Which of the parameters you want to Edit?
-          -----------------------------------------
-          Job Id: {} - Added: {}
+              -----------------------------------------
+              Which of the parameters you want to Edit?
+              -----------------------------------------
+              Job Id: {} - Added: {}
 
-               Parameter (Num) Current value
-               --------- ----- -------------
-                Customer  (1)  {}
-                 Product  (2)  {}
-                  Amount (3,A) {}
-                Material  (4)  {}
-          PrintSheetSize  (5)  {}
-                 Comment (6,C) {}
-                  Status (7,S) {}
-                Priority (8,P) {}
+                   Parameter (Num) Current value
+                   --------- ----- -------------
+                    Customer  (1)  {}
+                     Product  (2)  {}
+                      Amount (3,A) {}
+                    Material  (4)  {}
+              PrintSheetSize  (5)  {}
+                     Comment (6,C) {}
+                      Status (7,S) {}
+                    Priority (8,P) {}
 
-Choose the Parameter to Edit: """.format(i.id, i.addedDate, i.customer, i.product, i.amount, i.material, \
-                        i.printing_sheet_size, i.comment, i.status, i.priority), ("1", "2", "3", "4", "5", "6", "7", "8", "a", "c", "s", "p"))
+ Choose the Parameter to Edit: """.format(i.id, i.addedDate, i.customer, i.product, i.amount, i.material, \
+                                i.printing_sheet_size, i.comment, i.status, i.priority), ("1", "2", "3", "4", "5", "6", "7", "8", "a", "c", "s", "p"))
+        
             break
 
-    def edit(object_to_edit, parameter):    
+    def edit(temp_prompted_info, parameter):    
+        print("parameter is: ", parameter)
         if   parameter == "1":  # Customer
             n = input("""
             Add new value for CUSTOMER: """)
-            object_to_edit.customer = n                                
+            temp_prompted_info["customer"] = n                                
                                                  
         elif parameter == "2":  # Product 
             n = input("""
             Add new value for PRODUCT: """)
-            object_to_edit.product = n                                
+            temp_prompted_info["product"] = n                                
                                                  
         elif parameter == "3" or parameter.lower() == "a":  # Amount
             n = input("""
             Add new value for AMOUNT: """)
-            object_to_edit.amount = n                                
+            temp_prompted_info["amount"] = n                                
                                                  
         elif parameter == "4":  # Material
             n = input("""
             Add new value for MATERIAL: """)
-            object_to_edit.material = n                                
+            temp_prompted_info["material"] = n                                
                                                  
         elif parameter == "5":  # PrintSheetSize
             n = input("""
             Add new value for PrintSheetSize: """)
-            object_to_edit.printing_sheet_size = n                                
+            temp_prompted_info["printing_sheet_size"] = n                                
                                                  
         elif parameter == "6" or parameter.lower() == "c":  # Comment
             n = input("""
             Add new value for COMMENT: """)
-            object_to_edit.comment = n                                
+            temp_prompted_info["comment"] = n                                
                                                  
         elif parameter == "7" or parameter.lower() == "s":  # Status
             n = get_valid_input("Add new value for STATUS: (1=ReadyToPrint, 2=Waiting)", ("1","2"))
@@ -78,16 +86,17 @@ Choose the Parameter to Edit: """.format(i.id, i.addedDate, i.customer, i.produc
             # Jos input on 1, laitetaan statukseksi ready to print
             if n == "2":
                 waiting_for_what = input("Waiting for what?: ")
-                object_to_edit.status = "Waiting for: " + waiting_for_what 
+                temp_prompted_info["status"] = "Waiting for: " + waiting_for_what 
             elif n == "1":
-                object_to_edit.status = "Ready to Print"
+                temp_prompted_info["status"] = "Ready to Print"
 
         elif parameter == "8" or parameter.lower() == "p":  # Priority
             n = get_valid_input("""
-            Add new value for PRIORITY (1=Extremely Urgent, 2=Very Urgent, 3=Urgent, 0=Normal priotiry) """, ("1", "2", "3", "0"))
-            object_to_edit.priority = int(n)                               
+            Add new value for PRIORITY (1=Extremely Urgent, 2=Very Urgent, 3=Urgent, 0=Normal priority) """, ("1", "2", "3", "0"))
+            temp_prompted_info["priority"] = int(n)                               
 
-    edit(temp_job_object, parameter)
+    edit(temp_prompted_info, parameter)
+    return temp_prompted_info
 
 def gimme_waiting_jobs(list_of_jobs):
     """ This give a list of all jobs with status: Waiting (2) """

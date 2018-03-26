@@ -2,14 +2,14 @@ import time, datetime, os, pickle, sys
 from tools import get_valid_input, gimme_my_todo_list, gimme_waiting_jobs, edit_job
 
 print(""" 
-         Welcome to:
-         __________.                  
-         \_  ____/ | ______  _  __.  
-          |   _)|  |/  _ \ \/ \/ / 
-          |   \ |  (  <_> )     /  
-          \_  / |__|\____/ \/\_/   
-            \/  I'm Your brain now.
-                                   """)
+       Welcome to:
+       __________.                  
+       \_  ____/ | ______  _  __.  
+        |   _)|  |/  _ \ \/ \/ / 
+        |   \ |  (  <_> )     /  
+        \_  / |__|\____/ \/\_/   
+          \/  I'm Your brain now.
+                                  """)
 
 # Check to see if the current_job_list.txt exists. If not, create the file and add the info-object
 class Info:
@@ -53,25 +53,13 @@ class JobList:
         with open("current_job_list.txt", "wb") as f:
             pickle.dump(self.current_job_list, f, protocol=4, fix_imports=False)
 
-    # Funktio töiden lisäämiseen.
+    # Funktio töiden lisäämiseen. ¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤
     def add_job(self):
         """ Ensin otetaan käyttäjältä inputit ja sen jälkeen luodaan Job-objekti annetuilla specseillä ja lisätän se listaan. """
 
-        prompted_info = {
-            "customer"             : input("Customer: "),         
-            "product"              : input("Product: "),
-            "amount"               : input("Amount: "),           
-            "material"             : input("Material: "),         
-            "comment"              : input("Comment: "),          
-            "printing_sheet_size"  : input("Printing_sheet_size: "),
-            "current_id"           : self.info.current_id,
-            "addedDate"            : datetime.datetime.now().strftime("%d-%m %H:%M"),
-            "status"               : get_valid_input("Status 1=ReadyToPrint, 2=Waiting: ", ("1","2")).strip()
-            }
-
-        self.current_job_list.append(Job(**prompted_info))
+        self.current_job_list.append(Job())
         self.info.current_id += 1
-
+# ¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤
     def remove_job(self, id_to_remove):
         """ Poistaa id:n perusteella valitun työn. """
         for i in self.current_job_list[1:]:
@@ -127,17 +115,32 @@ class JobList:
 
 class Job:
 
-    def __init__(self, **prompted_info):
-        """ Promptataan käyttäjältä työtä koskevat tiedot """
-        self.customer = prompted_info.get("customer")
-        self.product = prompted_info.get("product")
-        self.amount = prompted_info.get("amount")
-        self.material = prompted_info.get("material")
-        self.printing_sheet_size = prompted_info.get("printing_sheet_size")
-        self.status = prompted_info.get("status")
-        self.comment = prompted_info.get("comment")
-        self.addedDate = prompted_info.get("addedDate")
-        self.id = prompted_info.get("current_id")
+    def __init__(self, prompted_info = 0):
+
+        self.prompted_info = prompted_info
+
+        if self.prompted_info == 0:
+            self.prompted_info = {
+                "customer"             : input("Customer: "),         
+                "product"              : input("Product: "),
+                "amount"               : input("Amount: "),           
+                "material"             : input("Material: "),         
+                "comment"              : input("Comment: "),          
+                "printing_sheet_size"  : input("Printing_sheet_size: "),
+                "current_id"           : my_job_list.info.current_id,
+                "addedDate"            : datetime.datetime.now().strftime("%d-%m %H:%M"),
+                "status"               : get_valid_input("Status 1=ReadyToPrint, 2=Waiting: ", ("1","2")).strip()
+                }
+
+        self.customer = self.prompted_info.get("customer")
+        self.product = self.prompted_info.get("product")
+        self.amount = self.prompted_info.get("amount")
+        self.material = self.prompted_info.get("material")
+        self.printing_sheet_size = self.prompted_info.get("printing_sheet_size")
+        self.status = self.prompted_info.get("status")
+        self.comment = self.prompted_info.get("comment")
+        self.addedDate = self.prompted_info.get("addedDate")
+        self.id = self.prompted_info.get("current_id")
         self.priority = 0
 
         # Muokataan statusta siten että jos input on 2, kysytään syytä mitä odottaa,
@@ -187,8 +190,14 @@ while True:
         my_job_list.write_pickle_file()
 
     elif n.lower() == "e":
-        ed = int(input("Type the ID of the job you wan't to edit: "))
-        edit_job(my_job_list.current_job_list[1:], ed)
+        typed_id = int(input("Type the ID of the job you wan't to edit: "))
+        for i in my_job_list.current_job_list[1:]:
+            if i.id == typed_id:
+                index_of_the_job = my_job_list.current_job_list.index(i)
+                # Tässä korvataan vanha objekti uudella vastaavalla (johon on vaihdettu haluttu parametri)
+                my_job_list.current_job_list[index_of_the_job] = Job(edit_job(my_job_list.current_job_list[1:], typed_id))
+        # edit_job(my_job_list.current_job_list[1:], ed)
+        # my_job_list.current_job_list.replace(OLD JOB, edit_job(OLD_JOB)
         my_job_list.write_pickle_file()
 
     elif n.lower() == "h":
@@ -230,12 +239,11 @@ while True:
 
 
     else:
-        int_n = int(n)
-        my_job_list.show_job(int_n)
-
+#       int_n = int(n)
+#       my_job_list.show_job(int_n)
         
-#       try:
-#           int_n = int(n)
-#           my_job_list.show_job(int_n)
-#       except:
-#           print(n, "is not a valid input. See (M)enu for commands.")
+        try:
+            int_n = int(n)
+            my_job_list.show_job(int_n)
+        except:
+            print(n, "is not a valid input. See (M)enu for commands.")

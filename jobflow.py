@@ -1,5 +1,5 @@
 import time, datetime, os, pickle, sys
-from tools import get_valid_input, gimme_my_todo_list, edit_job
+from tools import get_valid_input, gimme_my_todo_list, gimme_waiting_jobs, edit_job
 
 print(""" 
          Welcome to:
@@ -9,11 +9,11 @@ print("""
           |   \ |  (  <_> )     /  
           \_  / |__|\____/ \/\_/   
             \/  I'm Your brain now.
-   """)
+                                   """)
 
 # Check to see if the current_job_list.txt exists. If not, create the file and add the info-object
 class Info:
-    """ This class is so that we can store additional information in pickle-file, 
+    """ Class is made so that we can store additional information in pickle-file, 
     will be instantiated only when pickle-file is empty (to be specific: Doesn't exist)"""
     def __init__(self):
        self.current_id = 0
@@ -65,8 +65,8 @@ class JobList:
             "comment"              : input("Comment: "),          
             "printing_sheet_size"  : input("Printing_sheet_size: "),
             "current_id"           : self.info.current_id,
-            "addedDate"            : datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S"),
-            "status"               : get_valid_input("Status: (1=ReadyToPrint, 2=Waiting)", ("1","2"))
+            "addedDate"            : datetime.datetime.now().strftime("%d-%m %H:%M"),
+            "status"               : get_valid_input("Status 1=ReadyToPrint, 2=Waiting: ", ("1","2")).strip()
             }
 
         self.current_job_list.append(Job(**prompted_info))
@@ -91,30 +91,40 @@ class JobList:
 
     def show_jobs(self, job_list):
         print("""
-           ID:     ADDED:                  URG:   CUSTOMER:           PRODUCT:            AMOUNT:        SHEET:    MATERIAL:         COMMENT:       STATUS:""")
-        for i in job_list[1:]:
-            print("     -------------------------------------------------------------------------------------------------------------------------------------------------------------")
+       ID:     ADDED:             PR:    CUSTOMER:           PRODUCT:            AMOUNT:        SHEET:    MATERIAL:         COMMENT:       STATUS:""")
+        for i in job_list:
+            print("     -----------------------------------------------------------------------------------------------------------------------------------------------------")
             print("     | ", str(i.id).ljust(3), " | ", i.addedDate, " | ", str(i.priority).ljust(2), " | ", \
                     i.customer.ljust(15)[:15], " | ", i.product.ljust(15)[:15], " | ", i.amount.ljust(10)[:10], " | ", \
                     i.printing_sheet_size.ljust(5)[:5], " | ", i.material.ljust(13)[:13], " | ", i.comment.ljust(10)[:10], " | ", i.status.ljust(14)[:14], " | ")
-        print("     -------------------------------------------------------------------------------------------------------------------------------------------------------------\n")
+        print("     -----------------------------------------------------------------------------------------------------------------------------------------------------\n")
 
     def show_job(self, id_to_show):
         for i in self.current_job_list[1:]:
             if i.id == id_to_show:
-                print("""
-                   ----------------------------------------------------------------------------------------------------------------------------
-                   |        Id: {}       Customer: {}       Amount: {} |  
-                   ------------|---------------------------------|--------------------------------------------|--------------------------------
-                   |     Added: {}      Product: {}   Sheet size: {} |  
-                   ------------|---------------------------------|--------------------------------------------|--------------------------------
-                   |  Priority: {}       Material: {}       Status: {} | 
-                   ------------|---------------------------------|--------------------------------------------|--------------------------------
-                   |   Comment: {}|
-                   ----------------------------------------------------------------------------------------------------------------------------
-               """.format(str(i.id).ljust(17), i.customer.ljust(30), i.amount.ljust(30), \
-                       i.addedDate.ljust(17), i.product.ljust(30), i.printing_sheet_size.ljust(30), \
-                        str(i.priority).ljust(17), i.material.ljust(30), i.status.ljust(30), str(i.comment).ljust(110)))
+                print("""                                                      -------------------------------------------------------{}                                            
+                                                      | ID: {} Priority: {} :  Added: {} : Status: {} |                   
+        _/_/_/  _/      _/  _/_/_/_/    _/_/          |------------------------------------------------------{} |
+         _/    _/_/    _/  _/        _/    _/         |   Customer : {}                                      {} |
+        _/    _/  _/  _/  _/_/_/    _/    _/          |------------------------------------------------------{} |
+       _/    _/    _/_/  _/        _/    _/           |    Product : {}                                      {} |
+    _/_/_/  _/      _/  _/          _/_/              |   Material : {}                                      {} |
+                                                      |     Amount : {}                                      {} |
+                                                      | Sheet size : {}                                      {} |
+                                                      |    Comment : {}                                      {} |
+                                                      -------------------------------------------------------{} 
+               """.format("-".ljust(len(i.status), "-"), \
+                       str(i.id).ljust(4), i.priority, i.addedDate, i.status, \
+                        "-".ljust(len(i.status), "-"), \
+                        "-".ljust(len(i.status), "-"), \
+
+                        i.customer, "-".ljust(len(i.status), "-"), \
+                        i.product, "-".ljust(len(i.status), "-"), \
+                        i.material, "-".ljust(len(i.status), "-"),\
+                        i.amount, "-".ljust(len(i.status), "-"),\
+                        i.printing_sheet_size, "-".ljust(len(i.status), "-"),\
+                        i.comment, "-".ljust(len(i.status), "-"), \
+                        "-".ljust(len(i.status), "-")))
 
     def _clear_job_list(self):
         self.current_job_list[1:] = []
@@ -153,17 +163,16 @@ while True:
 
     if n.lower() == "m":
         print("""
-                                    --------------------------------------------------------------------
-       _____ _____ _____ _____ _    | (A) Add new Job   | (D) Delete Job      | (clear) Clear List     |
-      |     |   __|   | |  |  |_|   |-------------------|---------------------|------------------------|
-      | | | |   __| | | |  |  |_    | (L) List all Jobs | (E) Edit Job        | (H) Show all past Jobs | 
-      |_|_|_|_____|_|___|_____|_|   |-------------------|---------------------|------------------------| 
-                                    | (O) Ordered List  | (ID#) Show Job-info | (Q) Quit               | 
-                                    --------------------------------------------------------------------
-                     """)
-
+                                    -------------------------------------------------------------------------
+       _____ _____ _____ _____ _    | (O) Show Flow     | (A) Add new Job   | (#) Show Job-info | (Q) Quit  |
+      |     |   __|   | |  |  |_|   |-------------------|-------------------|-------------------|-----------|
+      | | | |   __| | | |  |  |_    | (L) Show All      | (E) Edit Job      | (clear) Clear All |           |
+      |_|_|_|_____|_|___|_____|_|   |-------------------|-------------------|-------------------|-----------|
+                                    | (W) Show Waiting  | (D) Delete Job    | (H) Show History  |           |
+                                    -------------------------------------------------------------------------
+                                                                                                         """)
     elif n.lower() == "a":
-        print("ADD JOB:\n")
+        print("\nENTER NEW JOB:\n")
         my_job_list.add_job()
         my_job_list.write_pickle_file()
 
@@ -173,8 +182,8 @@ while True:
       / __|___ _ __  _ __| |___| |_ ___  | |  (_)__| |_(_)_ _  __ _  (_)
      | (__/ _ \ '  \| '_ \ / -_)  _/ -_) | |__| (_-<  _| | ' \/ _` |  _ 
       \___\___/_|_|_| .__/_\___|\__\___| |____|_/__/\__|_|_||_\__, | (_)
-                    |_|                                       |___/""")      
-        my_job_list.show_jobs(my_job_list.current_job_list)
+                    |_|                                       |___/     """)      
+        my_job_list.show_jobs(my_job_list.current_job_list[1:])
 
     elif n.lower() == "d":
         rm = int(input("Type the ID of the job you wan't to remove: "))
@@ -193,8 +202,8 @@ while True:
              __  ___  __   __      
      |__| | /__`  |  /  \ |__) \ / o
      |  | | .__/  |  \__/ |  \  |  o                   
-                         """)
-            my_job_list.show_jobs(hist)
+                                    """)
+            my_job_list.show_jobs(hist[1:])
 
     elif n.lower() == "q":
         print("\nThank you for using Flow. See you soon!")
@@ -210,12 +219,27 @@ while True:
        __ _  ___ ___ ___  ___ ___(_) |__ | | ___  _ 
       / _` |/ __/ __/ _ \/ __/ __| | '_ \| |/ _ \(_)
      | (_| | (_| (_|  __/\__ \__ \ | |_) | |  __/ _ 
-      \__,_|\___\___\___||___/___/_|_.__/|_|\___|(_)        """)
-        my_job_list.show_jobs(gimme_my_todo_list(my_job_list.current_job_list))
+      \__,_|\___\___\___||___/___/_|_.__/|_|\___|(_) """)
+        my_job_list.show_jobs(gimme_my_todo_list(my_job_list.current_job_list[1:]))
+
+    elif n.lower() == "w":
+        print("""
+                     .__  __  .__                
+     __  _  _______  |__|/  |_|__| ____    ____  
+     \ \/ \/ /\__  \ |  \   __\  |/    \  / ___\ 
+      \     /  / __ \|  ||  | |  |   |  \/ /_/  > _  _  _ 
+       \/\_/  (____  /__||__| |__|___|  /\___  / (_)(_)(_)
+                   \/                 \//_____/           """)
+        my_job_list.show_jobs(gimme_waiting_jobs(my_job_list.current_job_list[1:]))
+
 
     else:
-        try:
-            int_n = int(n)
-            my_job_list.show_job(int_n)
-        except:
-            print(n, "is not a valid input. See (M)enu for commands.")
+        int_n = int(n)
+        my_job_list.show_job(int_n)
+
+        
+#       try:
+#           int_n = int(n)
+#           my_job_list.show_job(int_n)
+#       except:
+#           print(n, "is not a valid input. See (M)enu for commands.")

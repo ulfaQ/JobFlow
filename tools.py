@@ -30,15 +30,15 @@ def edit_job(job_list, job_id):
                --------- ----- -------------
                 Customer  (1)  {}
                  Product  (2)  {}
-                  Amount  (3)  {}
+                  Amount (3,A) {}
                 Material  (4)  {}
           PrintSheetSize  (5)  {}
-                 Comment  (6)  {}
-                  Status  (7)  {}
-                Priority  (8)  {}
+                 Comment (6,C) {}
+                  Status (7,S) {}
+                Priority (8,P) {}
 
 Choose the Parameter to Edit: """.format(i.id, i.addedDate, i.customer, i.product, i.amount, i.material, \
-                        i.printing_sheet_size, i.comment, i.status, i.priority), ("1", "2", "3", "4", "5", "6", "7", "8"))
+                        i.printing_sheet_size, i.comment, i.status, i.priority), ("1", "2", "3", "4", "5", "6", "7", "8", "a", "c", "s", "p"))
             break
 
     def edit(object_to_edit, parameter):    
@@ -52,7 +52,7 @@ Choose the Parameter to Edit: """.format(i.id, i.addedDate, i.customer, i.produc
             Add new value for PRODUCT: """)
             object_to_edit.product = n                                
                                                  
-        elif parameter == "3":  # Amount
+        elif parameter == "3" or parameter.lower() == "a":  # Amount
             n = input("""
             Add new value for AMOUNT: """)
             object_to_edit.amount = n                                
@@ -67,12 +67,12 @@ Choose the Parameter to Edit: """.format(i.id, i.addedDate, i.customer, i.produc
             Add new value for PrintSheetSize: """)
             object_to_edit.printing_sheet_size = n                                
                                                  
-        elif parameter == "6":  # Comment
+        elif parameter == "6" or parameter.lower() == "c":  # Comment
             n = input("""
             Add new value for COMMENT: """)
             object_to_edit.comment = n                                
                                                  
-        elif parameter == "7":  # Status
+        elif parameter == "7" or parameter.lower() == "s":  # Status
             n = get_valid_input("Add new value for STATUS: (1=ReadyToPrint, 2=Waiting)", ("1","2"))
             # Muokataan statusta siten että jos input on 2, kysytään syytä mitä odottaa,
             # Jos input on 1, laitetaan statukseksi ready to print
@@ -82,12 +82,21 @@ Choose the Parameter to Edit: """.format(i.id, i.addedDate, i.customer, i.produc
             elif n == "1":
                 object_to_edit.status = "Ready to Print"
 
-        elif parameter == "8":  # Urgency
+        elif parameter == "8" or parameter.lower() == "p":  # Priority
             n = get_valid_input("""
-            Add new value for URGENCY (1=Extremely Urgent, 2=Very Urgent, 3=Urgent, 0=Normal) """, ("1", "2", "3", "0"))
+            Add new value for PRIORITY (1=Extremely Urgent, 2=Very Urgent, 3=Urgent, 0=Normal priotiry) """, ("1", "2", "3", "0"))
             object_to_edit.priority = int(n)                               
 
     edit(temp_job_object, parameter)
+
+def gimme_waiting_jobs(list_of_jobs):
+    """ This give a list of all jobs with status: Waiting (2) """
+
+    temp_list = []
+    for i in list_of_jobs:
+        if "Waiting" in i.status:
+            temp_list.append(i)
+    return temp_list
 
 def gimme_my_todo_list(list_of_jobs):
     """ At the moment this only takes out all "Waiting"-jobs and arranges all urgent jobs to the top by priority."""
@@ -97,7 +106,7 @@ def gimme_my_todo_list(list_of_jobs):
     priority3_jobs = []
     priority0_jobs = []
     
-    for i in list_of_jobs[1:]:
+    for i in list_of_jobs:
         if i.status == "Ready to Print":
             if int(i.priority) == 1:
                 priority1_jobs.append(i)
@@ -109,7 +118,6 @@ def gimme_my_todo_list(list_of_jobs):
                 priority0_jobs.append(i)
 
     temp_list = []
-    temp_list.append(list_of_jobs[0])
 
     for i in priority1_jobs:
         temp_list.append(i)

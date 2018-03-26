@@ -102,28 +102,24 @@ class JobList:
     def show_job(self, id_to_show):
         for i in self.current_job_list[1:]:
             if i.id == id_to_show:
-                print("""                                                      -------------------------------------------------------{}                                            
-                                                      | ID: {} Priority: {} :  Added: {} : Status: {} |                   
-        _/_/_/  _/      _/  _/_/_/_/    _/_/          |------------------------------------------------------{} |
-         _/    _/_/    _/  _/        _/    _/         |   Customer : {}                                      {} |
-        _/    _/  _/  _/  _/_/_/    _/    _/          |------------------------------------------------------{} |
-       _/    _/    _/_/  _/        _/    _/           |    Product : {}                                      {} |
-    _/_/_/  _/      _/  _/          _/_/              |   Material : {}                                      {} |
-                                                      |     Amount : {}                                      {} |
-                                                      | Sheet size : {}                                      {} |
-                                                      |    Comment : {}                                      {} |
-                                                      -------------------------------------------------------{} 
-               """.format("-".ljust(len(i.status), "-"), \
-                       str(i.id).ljust(4), i.priority, i.addedDate, i.status, \
+                print("""                 
+                                                      {}            
+                                                     ----------------------------------------------------{}  
+        _/_/_/  _/      _/  _/_/_/_/    _/_/          ID: {} Priority: {} :  Added: {} : Status: {}            
+         _/    _/_/    _/  _/        _/    _/        ----------------------------------------------------{}    
+        _/    _/  _/  _/  _/_/_/    _/    _/          Product    : {}                                          
+       _/    _/    _/_/  _/        _/    _/           Amount     : {}                                          
+    _/_/_/  _/      _/  _/          _/_/              Material   : {}                                          
+                                                      Sheet size : {}                                          
+                                                      Comment    : {}                                          
+                                                     ----------------------------------------------------{}    
+               """.format(i.customer, "-".ljust(len(i.status), "-"), i.id, i.priority, i.addedDate, i.status, \
                         "-".ljust(len(i.status), "-"), \
-                        "-".ljust(len(i.status), "-"), \
-
-                        i.customer, "-".ljust(len(i.status), "-"), \
-                        i.product, "-".ljust(len(i.status), "-"), \
-                        i.material, "-".ljust(len(i.status), "-"),\
-                        i.amount, "-".ljust(len(i.status), "-"),\
-                        i.printing_sheet_size, "-".ljust(len(i.status), "-"),\
-                        i.comment, "-".ljust(len(i.status), "-"), \
+                        i.product, \
+                        i.amount, \
+                        i.material,\
+                        i.printing_sheet_size, \
+                        i.comment, \
                         "-".ljust(len(i.status), "-")))
 
     def _clear_job_list(self):

@@ -1,5 +1,5 @@
-import time, datetime, os, pickle, sys
-from tools import get_valid_input, gimme_my_todo_list, gimme_waiting_jobs, edit_job
+import time, os, pickle, sys
+from tools import get_valid_input, gimme_my_todo_list, add_or_edit_job
 
 print(""" 
        Welcome to:
@@ -57,7 +57,8 @@ class JobList:
     def add_job(self):
         """ Ensin otetaan käyttäjältä inputit ja sen jälkeen luodaan Job-objekti annetuilla specseillä ja lisätän se listaan. """
 
-        self.current_job_list.append(Job())
+        self.current_job_list.append(Job(add_or_edit_job(None, self.info.current_id)))
+        
         self.info.current_id += 1
 # ¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤
     def remove_job(self, id_to_remove):
@@ -84,23 +85,24 @@ class JobList:
             print("     -----------------------------------------------------------------------------------------------------------------------------------------------------")
             print("     | ", str(i.id).ljust(3), " | ", i.addedDate, " | ", str(i.priority).ljust(2), " | ", \
                     i.customer.ljust(15)[:15], " | ", i.product.ljust(15)[:15], " | ", i.amount.ljust(10)[:10], " | ", \
-                    i.printing_sheet_size.ljust(5)[:5], " | ", i.material.ljust(13)[:13], " | ", i.comment.ljust(10)[:10], " | ", i.status.ljust(14)[:14], " | ")
+                    i.printing_sheet_size.ljust(5)[:5], " | ", i.material.ljust(13)[:13], " | ", i.comment.ljust(10)[:10], " | ", i.status, " | ")
         print("     -----------------------------------------------------------------------------------------------------------------------------------------------------\n")
 
     def show_job(self, id_to_show):
+        """.ljust(14)[:14]"""
         for i in self.current_job_list[1:]:
             if i.id == id_to_show:
                 print("""                 
-                                                      {}            
-                                                     ----------------------------------------------------{}  
-        _/_/_/  _/      _/  _/_/_/_/    _/_/          ID: {} Priority: {} :  Added: {} : Status: {}            
-         _/    _/_/    _/  _/        _/    _/        ----------------------------------------------------{}    
-        _/    _/  _/  _/  _/_/_/    _/    _/          Product    : {}                                          
-       _/    _/    _/_/  _/        _/    _/           Amount     : {}                                          
-    _/_/_/  _/      _/  _/          _/_/              Material   : {}                                          
-                                                      Sheet size : {}                                          
-                                                      Comment    : {}                                          
-                                                     ----------------------------------------------------{}    
+                                                        {}            
+                                                       ----------------------------------------------------{}  
+        _/_/_/  _/      _/  _/_/_/_/    _/_/            ID: {} Priority: {} :  Added: {} : Status: {}            
+         _/    _/_/    _/  _/        _/    _/   _/     ----------------------------------------------------{}    
+        _/    _/  _/  _/  _/_/_/    _/    _/            Product    : {}                                          
+       _/    _/    _/_/  _/        _/    _/   _/        Amount     : {}                                          
+    _/_/_/  _/      _/  _/          _/_/                Material   : {}                                          
+                                                        Sheet size : {}                                          
+                                                        Comment    : {}                                          
+                                                       ----------------------------------------------------{}    
                """.format(i.customer, "-".ljust(len(i.status), "-"), i.id, i.priority, i.addedDate, i.status, \
                         "-".ljust(len(i.status), "-"), \
                         i.product, \
@@ -115,42 +117,21 @@ class JobList:
 
 class Job:
 
-    def __init__(self, prompted_info = 0):
+    def __init__(self, prompted_info):
 
         self.prompted_info = prompted_info
 
-        if self.prompted_info == 0:
-            self.prompted_info = {
-                "customer"             : input("Customer: "),         
-                "product"              : input("Product: "),
-                "amount"               : input("Amount: "),           
-                "material"             : input("Material: "),         
-                "comment"              : input("Comment: "),          
-                "printing_sheet_size"  : input("Printing_sheet_size: "),
-                "current_id"           : my_job_list.info.current_id,
-                "addedDate"            : datetime.datetime.now().strftime("%d-%m %H:%M"),
-                "status"               : get_valid_input("Status 1=ReadyToPrint, 2=Waiting: ", ("1","2")).strip()
-                }
-
-        self.customer = self.prompted_info.get("customer")
-        self.product = self.prompted_info.get("product")
-        self.amount = self.prompted_info.get("amount")
-        self.material = self.prompted_info.get("material")
-        self.printing_sheet_size = self.prompted_info.get("printing_sheet_size")
-        self.status = self.prompted_info.get("status")
-        self.comment = self.prompted_info.get("comment")
-        self.addedDate = self.prompted_info.get("addedDate")
-        self.id = self.prompted_info.get("current_id")
-        self.priority = 0
-
-        # Muokataan statusta siten että jos input on 2, kysytään syytä mitä odottaa,
-        # Jos input on 1, laitetaan statukseksi ready to print
-        if self.status == "2":
-            waiting_for_what = input("Waiting for what?: ")
-            self.status = "Waiting for: " + waiting_for_what 
-        elif self.status == "1":
-            self.status = "Ready to Print"
-
+        self.customer = prompted_info.get("customer")
+        self.product = prompted_info.get("product")
+        self.amount = prompted_info.get("amount")
+        self.material = prompted_info.get("material")
+        self.printing_sheet_size = prompted_info.get("printing_sheet_size")
+        self.status = prompted_info.get("status")
+        self.comment = prompted_info.get("comment")
+        self.addedDate = prompted_info.get("addedDate")
+        self.id = prompted_info.get("current_id")
+        self.priority = prompted_info.get("priority") 
+        
 # Pistetään ohjelma käyntiin
 my_job_list = JobList()
 # Haetaan työt tiedostosta
@@ -158,7 +139,7 @@ my_job_list.get_job_list_from_file()
 
 # Interface:
 while True:
-    n = input("Enter command:")
+    n = input("\nEnter command:")
 
     if n.lower() == "m":
         print("""
@@ -185,9 +166,15 @@ while True:
         my_job_list.show_jobs(my_job_list.current_job_list[1:])
 
     elif n.lower() == "d":
-        rm = int(input("Type the ID of the job you wan't to remove: "))
-        my_job_list.remove_job(rm)
-        my_job_list.write_pickle_file()
+        rm = input("\nType the ID of the job you wan't to remove: ")
+        try:
+            my_job_list.remove_job(int(rm))
+            my_job_list.write_pickle_file()
+            print("\nJob succesfully deleted")
+        except:
+            print("\n", rm, "not found in list\n")
+
+
 
     elif n.lower() == "e":
         typed_id = int(input("Type the ID of the job you wan't to edit: "))
@@ -195,10 +182,9 @@ while True:
             if i.id == typed_id:
                 index_of_the_job = my_job_list.current_job_list.index(i)
                 # Tässä korvataan vanha objekti uudella vastaavalla (johon on vaihdettu haluttu parametri)
-                my_job_list.current_job_list[index_of_the_job] = Job(edit_job(my_job_list.current_job_list[1:], typed_id))
-        # edit_job(my_job_list.current_job_list[1:], ed)
-        # my_job_list.current_job_list.replace(OLD JOB, edit_job(OLD_JOB)
+                my_job_list.current_job_list[index_of_the_job] = Job(add_or_edit_job(i))
         my_job_list.write_pickle_file()
+        
 
     elif n.lower() == "h":
         with open("hist_log.txt", "rb") as f:
@@ -235,13 +221,9 @@ while True:
       \     /  / __ \|  ||  | |  |   |  \/ /_/  > _  _  _ 
        \/\_/  (____  /__||__| |__|___|  /\___  / (_)(_)(_)
                    \/                 \//_____/           """)
-        my_job_list.show_jobs(gimme_waiting_jobs(my_job_list.current_job_list[1:]))
-
+        my_job_list.show_jobs([x for x in my_job_list.current_job_list[1:] if "Waiting" in x.status])
 
     else:
-#       int_n = int(n)
-#       my_job_list.show_job(int_n)
-        
         try:
             int_n = int(n)
             my_job_list.show_job(int_n)

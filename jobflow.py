@@ -127,6 +127,7 @@ class JobList:
         """.ljust(14)[:14]"""
         for i in self.current_job_list[1:]:
             if i.current_id == id_to_show:
+                rivitetty_comment = Tools.rivitetty(i.comment, len(i.status) + 13)
                 print("""                 
                                                        {}            
                                                       ---------------------------{}  
@@ -135,9 +136,7 @@ class JobList:
         _/    _/  _/  _/  _/_/_/   _/    _/            Product    : {}                                          
        _/    _/    _/_/  _/       _/    _/   _/        Amount     : {}                                          
     _/_/_/  _/      _/  _/         _/_/                Material   : {}                                          
-                                                       Sheet size : {}                                          
-                                                       Comment    : {}                                          
-                                                      ---------------------------{}    """.format( \
+                                                       Sheet size : {}""".format( \
                                                       i.customer, "-".ljust(len(i.status), "-"), \
                                                       i.current_id, i.priority, i.addedDate, i.status, \
                                                       "-".ljust(len(i.status), "-"), \
@@ -145,8 +144,13 @@ class JobList:
                                                       i.amount, \
                                                       i.material,\
                                                       i.printing_sheet_size, \
-                                                      i.comment, \
-                                                      "-".ljust(len(i.status), "-") ))
+                                                       ))
+                                        
+                print("""                                                       Comment    : {}""".format(rivitetty_comment[0]))
+                for row in rivitetty_comment[1:]:
+                    print("                                                                    {}".format(row))
+
+                print(  "                                                       ---------------------------{}".format("-".ljust(len(i.status), "-")))
 
     def _clear_job_list(self):
         n = input("Are you sure you wan't to remove all jobs from current_job_list permanently. \
@@ -187,6 +191,38 @@ while True:
 
     elif n.lower() == "d":
         my_job_list.delete_job()
+        print("""
+        ░░█▀░░░░░░░░░░░▀▀███████░░░░ 
+        ░░█▌░░░░░░░░░░░░░░░▀██████░░░ 
+        ░█▌░░░░░░░░░░░░░░░░███████▌░░ 
+        ░█░░░░░░░░░░░░░░░░░████████░░ 
+        ▐▌░░░░░░░░░░░░░░░░░▀██████▌░░ 
+        ░▌▄███▌░░░░▀████▄░░░░▀████▌░░ 
+        ▐▀▀▄█▄░▌░░░▄██▄▄▄▀░░░░████▄▄░ 
+        ▐░▀░░═▐░░░░░░══░░▀░░░░▐▀░▄▀▌▌ 
+        ▐░░░░░▌░░░░░░░░░░░░░░░▀░▀░░▌▌ 
+        ▐░░░▄▀░░░▀░▌░░░░░░░░░░░░▌█░▌▌ 
+        ░▌░░▀▀▄▄▀▀▄▌▌░░░░░░░░░░▐░▀▐▐░ 
+        ░▌░░▌░▄▄▄▄░░░▌░░░░░░░░▐░░▀▐░░ 
+        ░█░▐▄██████▄░▐░░░░░░░░█▀▄▄▀░░ 
+        ░▐░▌▌░░░░░░▀▀▄▐░░░░░░█▌░░░░░░ 
+        ░░█░░▄▀▀▀▀▄░▄═╝▄░░░▄▀░▌░░░░░░ 
+        ░░░▌▐░░░░░░▌░▀▀░░▄▀░░▐░░░░░░░ 
+        ░░░▀▄░░░░░░░░░▄▀▀░░░░█░░░░░░░ 
+        ░░░▄█▄▄▄▄▄▄▄▀▀░░░░░░░▌▌░░░░░░ 
+        ░░▄▀▌▀▌░░░░░░░░░░░░░▄▀▀▄░░░░░ 
+        ▄▀░░▌░▀▄░░░░░░░░░░▄▀░░▌░▀▄░░░ 
+        ░░░░▌█▄▄▀▄░░░░░░▄▀░░░░▌░░░▌▄▄ 
+        ░░░▄▐██████▄▄░▄▀░░▄▄▄▄▌░░░░▄░ 
+        ░░▄▌████████▄▄▄███████▌░░░░░▄ 
+        ░▄▀░██████████████████▌▀▄░░░░ 
+        ▀░░░█████▀▀░░░▀███████░░░▀▄░░ 
+        ░░░░▐█▀░░░▐░░░░░▀████▌░░░░▀▄░ 
+        ░░░░░░▌░░░▐░░░░▐░░▀▀█░░░░░░░▀ 
+        ░░░░░░▐░░░░▌░░░▐░░░░░▌░░░░░░░ 
+        ░╔╗║░╔═╗░═╦═░░░░░╔╗░░╔═╗░╦═╗░ 
+        ░║║║░║░║░░║░░░░░░╠╩╗░╠═╣░║░║░ 
+        ░║╚╝░╚═╝░░║░░░░░░╚═╝░║░║░╩═╝░ """)
 
     elif n[0].lower() == "e":
         my_job_list.edit_job(n)
@@ -247,10 +283,10 @@ while True:
                                     \\---------------------------------------------------------------------------/
                                                                                                          """)
     else:
-        try:
-            int_n = int(n)
-            my_job_list.show_job(int_n)
-        except:
-            print(n, "is not a valid input. See (M)enu for commands.")
+       # try:
+        int_n = int(n)
+        my_job_list.show_job(int_n)
+       # except:
+       #     print(n, "is not a valid input. See (M)enu for commands.")
 
     my_job_list.write_pickle_file()

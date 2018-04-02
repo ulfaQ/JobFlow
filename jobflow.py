@@ -1,5 +1,9 @@
-import time, os, pickle, sys
+import time, datetime, os, pickle, sys
 from tools import Tools 
+from files import Files
+from pdf_generator import MakePDF
+
+Files.check_files()
 
 print(""" 
        Welcome to:
@@ -10,33 +14,6 @@ print("""
         \_  / |__|\____/ \/\_/   
           \/  I'm Your brain now.
                                   """)
-
-class Files:
-    """ Class for initial setting of pickle-formatted txt files (current job list and history) and setting their info-objects"""
-    class Info:
-        """ Class is made so that we can store additional information in pickle-file, 
-        will be instantiated only when pickle-file doesn't exist)"""
-
-        def __init__(self):
-           self.current_id = 0
-
-    def check_files():
-        # check if current_job_list.txt exist, if not, create it.
-        try:
-            with open("current_job_list.txt", "rb") as f:
-                pass
-        except:
-            with open("current_job_list.txt", "wb") as f:
-                pickle.dump([self.Info()], f, protocol=4, fix_imports=False)
-        # check if hist_log.txt exist, if not, create it.
-        try:
-            with open("hist_log.txt", "rb") as f:
-                pass
-        except: # Info object is in hist_log only to fill the first object. No other use
-            with open("hist_log.txt", "wb") as f:
-                pickle.dump([self.Info()], f, protocol=4, fix_imports=False)
-
-Files.check_files()
 
 class JobList:
     """ Class for managing jobs, Instance of this class is created in the last lines """
@@ -62,7 +39,7 @@ class JobList:
     # Funktio töiden lisäämiseen. 
     def add_job(self):
 
-        print("\nENTER NEW JOB\n")
+        print("\n    ENTERING NEW JOB\n")
         self.current_job_list.append(Job(Tools().add_or_edit_job(None, self.info.current_id)))
         self.info.current_id += 1
         print("\n   Job added!")
@@ -70,11 +47,22 @@ class JobList:
     def delete_job(self):
         """ Poistaa id:n perusteella valitun työn. """
         id_to_remove = input("\nType the ID of the Job you wan't to delete: ")
-        try:
-            id_to_remove = int(id_to_remove)
-            for i in self.current_job_list[1:]:
-                if i.current_id == id_to_remove:
 
+        if id_to_remove.isdigit():
+            id_to_remove = int(id_to_remove)
+        else:
+            print("    {} is not valid input. ID can only contain integers.".format(id_to_remove))
+            return
+
+        n = None
+        for i in self.current_job_list[1:]:
+            if i.job_id == id_to_remove:
+
+                n = Tools().get_valid_input("Are you sure you wan't to remove {} : {} : {} : {} : {} ?".format("ID: ", i.job_id, i.customer, i.product, i.amount), ("y", "n")).lower()
+
+                if n == "y":
+                    self.current_job_list.remove(i)
+                    i.status = ("DELETED {}".format(datetime.datetime.now().strftime("%d-%m-%Y %H:%M")))
                     #Tallennetaan hist_logiin poistettu työ
                     temp_hist_log = None
                     with open("hist_log.txt", "rb") as f:
@@ -82,51 +70,60 @@ class JobList:
                     temp_hist_log.append(i)
                     with open("hist_log.txt", "wb") as f:
                         pickle.dump(temp_hist_log, f, protocol=4, fix_imports=False)
-                        
-                    n = input("Are you sure you wan't to remove {} : {} : {} : {} : {} (y ,n): ".format("ID: ", i.current_id, i.customer, i.product, i.amount)).lower()
-                    if n == "y":
-                        self.current_job_list.remove(i)
-                    print("\nJob succesfully deleted!")
-        except:
-            print("\n", rm, "not found in list\n")
+                    print("\n    Job succesfully deleted!")
+                    return
+
+                elif n == "n":
+                    print("\n    Deletion cancelled!")
+                    return
+    
+        print("\n    ID: {} NOT FOUND".format(id_to_remove))
 
     def edit_job(self, n):
         # Katsotaan jos käyttäjä käyttää 'e#p' shortcutia, ja passataan parametri (tällä hetkellä vain p toimii) add_or_edit_job functiolle
-        parameter = None
-        if len(n) == 1:
-            input_id = int(input("Type the ID of the job you wan't to edit: "))
+        input_id = None
+        suggestion = None
+        if n == "e":
+            suggestion = input("\nType the ID of the job you wan't to edit: ")
+            if suggestion.isdigit():
+                input_id = int(suggestion)
+              #except:
+               #    if input_id == "q":
+               #        break
+               #    print(input_id, " is not a valid input. ID can only contain integers! (q to cancel): ")
 
-        elif len(n) > 1 and str(n[-1]) != "p":
+        if len(n) > 1 and n[1:].isdigit():
             input_id = int(n[1:])
 
-        if len(n) > 2 and n[-1] == "p":
+        parameter = None
+        if len(n) > 2 and n[-1] == "p" and n[1:-1].isdigit():
             input_id = int(n[1:-1])
             parameter = n[-1]
-            print("\nShortcut 'e#p' detected.")
+            print("\n    Shortcut 'e#p' detected.")
 
-        for i in my_job_list.current_job_list[1:]:
-            if i.current_id == input_id:
+        for i in RUNNING_LIST.current_job_list[1:]:
+            if i.job_id == input_id:
                 index_of_the_job = self.current_job_list.index(i)
                 # Tässä korvataan vanha objekti uudella vastaavalla (johon on vaihdettu haluttu parametri)
                 self.current_job_list[index_of_the_job] = Job(Tools().add_or_edit_job(i, None, parameter))
                 return
-        print("JOB ID {} WAS NOT FOUND".format(input_id))
 
-
+        print("\n    ID {} NOT FOUND".format(input_id))
+        
     def show_list(self, job_list):
         print("""
        ID:     ADDED:          PR:    CUSTOMER:           PRODUCT:            AMOUNT:        SHEET:    MATERIAL:         COMMENT:       STATUS:""")
         for i in job_list:
-            print("     -----------------------------------------------------------------------------------------------------------------------------------------------------")
-            print("     | ", str(i.current_id).ljust(3), " | ", i.addedDate, " | ", str(i.priority).ljust(2), " | ", \
+            print("     ------------------------------------------------------------------------------------------------------------------------------------------------------")
+            print("     | ", str(i.job_id).ljust(3), " | ", i.addedDate, " | ", str(i.priority).ljust(2), " | ", \
                     i.customer.ljust(15)[:15], " | ", i.product.ljust(15)[:15], " | ", i.amount.ljust(10)[:10], " | ", \
-                    i.printing_sheet_size.ljust(5)[:5], " | ", i.material.ljust(13)[:13], " | ", i.comment.ljust(10)[:10], " | ", i.status, " | ")
-        print("     -----------------------------------------------------------------------------------------------------------------------------------------------------\n")
+                    i.printing_sheet_size.ljust(5)[:5], " | ", i.material.ljust(13)[:13], " | ", i.comment.ljust(10)[:10], " | ", str(i.status).ljust(16)[:16], "| ")
+        print("     ------------------------------------------------------------------------------------------------------------------------------------------------------\n")
 
-    def show_job(self, id_to_show):
+    def show_job_info(self, id_to_show):
         """.ljust(14)[:14]"""
         for i in self.current_job_list[1:]:
-            if i.current_id == id_to_show:
+            if i.job_id == id_to_show:
                 rivitetty_comment = Tools.rivitetty(i.comment, len(i.status) + 13)
                 print("""                 
                                                        {}            
@@ -138,7 +135,7 @@ class JobList:
     _/_/_/  _/      _/  _/         _/_/                Material   : {}                                          
                                                        Sheet size : {}""".format( \
                                                       i.customer, "-".ljust(len(i.status), "-"), \
-                                                      i.current_id, i.priority, i.addedDate, i.status, \
+                                                      i.job_id, i.priority, i.addedDate, i.status, \
                                                       "-".ljust(len(i.status), "-"), \
                                                       i.product, \
                                                       i.amount, \
@@ -150,20 +147,19 @@ class JobList:
                 for row in rivitetty_comment[1:]:
                     print("                                                                    {}".format(row))
 
-                print(  "                                                       ---------------------------{}".format("-".ljust(len(i.status), "-")))
+                print(  "                                                      ---------------------------{}".format("-".ljust(len(i.status), "-")))
 
     def _clear_job_list(self):
-        n = input("Are you sure you wan't to remove all jobs from current_job_list permanently. \
-Jobs removed by 'clear' are not saved to history. (y, n): ")
+        n = Tools().get_valid_input("Are you sure you wan't to remove all jobs from current_job_list permanently. \
+Jobs removed by 'clear' are not saved to history. ", ("y", "n"))
         if n == "y":
             self.current_job_list[1:] = []
+        if n == "n":
+            print("\n   CLEAR CANCELLED")
 
 class Job:
-
     def __init__(self, prompted_info):
-
         self.prompted_info = prompted_info
-
         self.customer = prompted_info.get("customer")
         self.product = prompted_info.get("product")
         self.amount = prompted_info.get("amount")
@@ -172,108 +168,84 @@ class Job:
         self.status = prompted_info.get("status")
         self.comment = prompted_info.get("comment")
         self.addedDate = prompted_info.get("addedDate")
-        self.current_id = prompted_info.get("current_id")
+        self.job_id = prompted_info.get("job_id")
         self.priority = prompted_info.get("priority") 
         
-# Pistetään ohjelma käyntiin
-my_job_list = JobList()
-# Haetaan työt tiedostosta
-my_job_list.get_job_list_from_file()
-
 # Interface:
-while True:
-    n = input("\nEnter command:\n>>> ")
-    if len(n) == 0:
-        pass
+class Interface:
+    def interface():
+        n = input("\nEnter command\n>>> ")
+        n = n.lower()
+        if len(n) == 0:
+            pass
 
-    elif n.lower() == "a":
-        my_job_list.add_job()
+        # Making report-pdf's
+        elif n == "ro":
+            MakePDF().make_report(Tools().gimme_my_todo_list(RUNNING_LIST.current_job_list[1:]), "Acceccible Jobs")
+            print("\n    Created a report of all accessible jobs.")
+        elif n == "rl":
+            MakePDF().make_report(RUNNING_LIST.current_job_list[1:], "All Jobs")
+            print("\n    Created a report of all jobs.")
+        elif n == "rw":
+            MakePDF().make_report([x for x in RUNNING_LIST.current_job_list[1:] if "Waiting" in x.status], "Waiting Jobs")
+            print("\n    Created a report of all waiting jobs.")
 
-    elif n.lower() == "d":
-        my_job_list.delete_job()
-        print("""
-        ░░█▀░░░░░░░░░░░▀▀███████░░░░ 
-        ░░█▌░░░░░░░░░░░░░░░▀██████░░░ 
-        ░█▌░░░░░░░░░░░░░░░░███████▌░░ 
-        ░█░░░░░░░░░░░░░░░░░████████░░ 
-        ▐▌░░░░░░░░░░░░░░░░░▀██████▌░░ 
-        ░▌▄███▌░░░░▀████▄░░░░▀████▌░░ 
-        ▐▀▀▄█▄░▌░░░▄██▄▄▄▀░░░░████▄▄░ 
-        ▐░▀░░═▐░░░░░░══░░▀░░░░▐▀░▄▀▌▌ 
-        ▐░░░░░▌░░░░░░░░░░░░░░░▀░▀░░▌▌ 
-        ▐░░░▄▀░░░▀░▌░░░░░░░░░░░░▌█░▌▌ 
-        ░▌░░▀▀▄▄▀▀▄▌▌░░░░░░░░░░▐░▀▐▐░ 
-        ░▌░░▌░▄▄▄▄░░░▌░░░░░░░░▐░░▀▐░░ 
-        ░█░▐▄██████▄░▐░░░░░░░░█▀▄▄▀░░ 
-        ░▐░▌▌░░░░░░▀▀▄▐░░░░░░█▌░░░░░░ 
-        ░░█░░▄▀▀▀▀▄░▄═╝▄░░░▄▀░▌░░░░░░ 
-        ░░░▌▐░░░░░░▌░▀▀░░▄▀░░▐░░░░░░░ 
-        ░░░▀▄░░░░░░░░░▄▀▀░░░░█░░░░░░░ 
-        ░░░▄█▄▄▄▄▄▄▄▀▀░░░░░░░▌▌░░░░░░ 
-        ░░▄▀▌▀▌░░░░░░░░░░░░░▄▀▀▄░░░░░ 
-        ▄▀░░▌░▀▄░░░░░░░░░░▄▀░░▌░▀▄░░░ 
-        ░░░░▌█▄▄▀▄░░░░░░▄▀░░░░▌░░░▌▄▄ 
-        ░░░▄▐██████▄▄░▄▀░░▄▄▄▄▌░░░░▄░ 
-        ░░▄▌████████▄▄▄███████▌░░░░░▄ 
-        ░▄▀░██████████████████▌▀▄░░░░ 
-        ▀░░░█████▀▀░░░▀███████░░░▀▄░░ 
-        ░░░░▐█▀░░░▐░░░░░▀████▌░░░░▀▄░ 
-        ░░░░░░▌░░░▐░░░░▐░░▀▀█░░░░░░░▀ 
-        ░░░░░░▐░░░░▌░░░▐░░░░░▌░░░░░░░ 
-        ░╔╗║░╔═╗░═╦═░░░░░╔╗░░╔═╗░╦═╗░ 
-        ░║║║░║░║░░║░░░░░░╠╩╗░╠═╣░║░║░ 
-        ░║╚╝░╚═╝░░║░░░░░░╚═╝░║░║░╩═╝░ """)
+        elif n == "a":
+            RUNNING_LIST.add_job()
 
-    elif n[0].lower() == "e":
-        my_job_list.edit_job(n)
+        elif n == "d":
+            RUNNING_LIST.delete_job()
 
-    elif n.lower() == "q":
-        print("\nThank you for using Flow. See you soon!")
-        sys.exit()
+        elif n[0] == "e":
+            RUNNING_LIST.edit_job(n)
 
-    elif n.lower() == "clear":
-        my_job_list._clear_job_list()
+        elif n == "q":
+            print("\n    Thank you for using Flow. See you soon!")
+            sys.exit()
 
-    elif n.lower() == "l":
-        print("""
+        elif n == "clear":
+            RUNNING_LIST._clear_job_list()
+
+        elif n == "l":
+            print("""
        ___                _     _         _    _    _   _             _ 
       / __|___ _ __  _ __| |___| |_ ___  | |  (_)__| |_(_)_ _  __ _  (_)
      | (__/ _ \ '  \| '_ \ / -_)  _/ -_) | |__| (_-<  _| | ' \/ _` |  _ 
       \___\___/_|_|_| .__/_\___|\__\___| |____|_/__/\__|_|_||_\__, | (_)
                     |_|                                       |___/     """)      
-        my_job_list.show_list(my_job_list.current_job_list[1:])
- 
-    elif n.lower() == "o":
-        print("""
+            RUNNING_LIST.show_list(RUNNING_LIST.current_job_list[1:])
+     
+        elif n == "o":
+            print("""
                                   _ _     _      
        __ _  ___ ___ ___  ___ ___(_) |__ | | ___  _ 
       / _` |/ __/ __/ _ \/ __/ __| | '_ \| |/ _ \(_)
      | (_| | (_| (_|  __/\__ \__ \ | |_) | |  __/ _ 
       \__,_|\___\___\___||___/___/_|_.__/|_|\___|(_) """)
-        my_job_list.show_list(Tools().gimme_my_todo_list(my_job_list.current_job_list[1:]))
+            RUNNING_LIST.show_list(Tools().gimme_my_todo_list(RUNNING_LIST.current_job_list[1:]))
 
-    elif n.lower() == "w":
-        print("""
+        elif n == "w":
+            print("""
                      .__  __  .__                
      __  _  _______  |__|/  |_|__| ____    ____  
      \ \/ \/ /\__  \ |  \   __\  |/    \  / ___\ 
       \     /  / __ \|  ||  | |  |   |  \/ /_/  > _  _  _ 
        \/\_/  (____  /__||__| |__|___|  /\___  / (_)(_)(_)
                    \/                 \//_____/           """)
-        my_job_list.show_list([x for x in my_job_list.current_job_list[1:] if "Waiting" in x.status])
+            RUNNING_LIST.show_list([x for x in RUNNING_LIST.current_job_list[1:] if "Waiting" in x.status])
 
-    elif n.lower() == "h":
-        with open("hist_log.txt", "rb") as f:
-            hist = pickle.load(f, fix_imports=False, encoding="ASCII", errors="strict")
-            print("""
+        elif n == "h":
+            with open("hist_log.txt", "rb") as f:
+                hist = pickle.load(f, fix_imports=False, encoding="ASCII", errors="strict")
+                print("""
              __  ___  __   __      
      |__| | /__`  |  /  \ |__) \ / o
      |  | | .__/  |  \__/ |  \  |  o                   
                                     """)
-            my_job_list.show_list(hist[1:])
+            RUNNING_LIST.show_list(hist[1:])
 
-    elif n.lower() == "m":
-        print("""
+        elif n == "m":
+            print("""
                                     /---------------------------------------------------------------------------\\
        _____ _____ _____ _____ _    | (O) Show Flow     | (A) Add new Job   | (#) Show Job-info | (e#p)         |
       |     |   __|   | |  |  |_|   |-------------------|-------------------|-------------------|---------------|
@@ -282,11 +254,17 @@ while True:
                                     | (W) Show Waiting  | (D) Delete Job    | (H) Show History  | (Q) Quit      |
                                     \\---------------------------------------------------------------------------/
                                                                                                          """)
-    else:
-       # try:
-        int_n = int(n)
-        my_job_list.show_job(int_n)
-       # except:
-       #     print(n, "is not a valid input. See (M)enu for commands.")
+        elif n.isdigit():
+            int_n = int(n)
+            RUNNING_LIST.show_job_info(int_n)
+        else:
+            print("\n    {} is not a valid input.".format(n))
 
-    my_job_list.write_pickle_file()
+        RUNNING_LIST.write_pickle_file()
+
+# Pistetään ohjelma pyörimään
+RUNNING_LIST = JobList()
+RUNNING_LIST.get_job_list_from_file()
+
+while True:
+    Interface.interface()

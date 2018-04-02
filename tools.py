@@ -52,7 +52,7 @@ class Tools:
                               Status (7,S) {}
                             Priority (8,P) {}
 
-             Choose the Parameter to Edit: """.format(job.current_id, job.addedDate, job.customer, job.product, job.amount, job.material, \
+             Choose the Parameter to Edit: """.format(job.job_id, job.addedDate, job.customer, job.product, job.amount, job.material, \
                                             job.printing_sheet_size, job.comment, job.status, job.priority), \
                                             ("1", "2", "3", "4", "5", "6", "7", "8", "a", "c", "s", "p"))
 
@@ -69,8 +69,8 @@ class Tools:
                     "c" : ["comment", None],
                     "7" : ["status", ("1" ,"2")],
                     "s" : ["status", ("1" ,"2")],
-                    "8" : ["priority", ("1" ,"2", "3")],
-                    "p" : ["priority", ("1" ,"2", "3")],
+                    "8" : ["priority", ("1" ,"2", "3", "0")],
+                    "p" : ["priority", ("1" ,"2", "3", "0")],
                     }
 
             job.prompted_info[inputs[parameter][0]] = self.get_valid_input("\nGive new value for {} : ".format(inputs[parameter][0]), inputs[parameter][1])
@@ -88,7 +88,7 @@ class Tools:
                     "material"             : input("Material: "),         
                     "comment"              : input("Comment: "),          
                     "printing_sheet_size"  : input("Printing_sheet_size: "),
-                    "current_id"           : id_input, # self.info.current_id passed as a second (optional) parameter in jobflow.py add_job()
+                    "job_id"               : id_input, # self.info.current_id passed as a second (optional) parameter in jobflow.py add_job()
                     "addedDate"            : datetime.datetime.now().strftime("%d-%m %H:%M"),
                     "status"               : self.get_status(self.get_valid_input("Status 1=ReadyToPrint, 2=Waiting: ", ("1","2"))),
                     "priority"             : "0"
@@ -124,7 +124,7 @@ class Tools:
         return ordered_list
 
     def rivitetty(long_string, row_length):
-        """ Palauttaa tietyin levyiseen kenttään mahtuvan lauseen rivitettynä listaan """
+        """ Palauttaa lauseen sanat jaettuna listan elementteihin siten että yhdellä rivillä on aina maksimissaa row_length verran merkkejä. How else could this be explained?!"""
         words = long_string.rsplit()
         rows = [[]]
         count = 0
@@ -135,9 +135,7 @@ class Tools:
                 rows.append([])
                 count += 1
                 rows[count].append(i)
-
         joined_rows = []
         for i in rows:
             joined_rows.append(" ".join(i))
         return joined_rows
-

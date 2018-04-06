@@ -1,5 +1,6 @@
 import time, datetime, os, pickle, sys
-from tools import Tools 
+# Own modules:
+from tools import Tools
 from files import Files
 from pdf_generator import MakePDF
 
@@ -41,8 +42,8 @@ class JobList:
 
         print("\n    ENTERING NEW JOB\n")
         self.current_job_list.append(Job(Tools().add_or_edit_job(None, self.info.current_id)))
+        print("\n   Job {} added!".format(self.info.current_id))
         self.info.current_id += 1
-        print("\n   Job added!")
 
     def delete_job(self):
         """ Poistaa id:n perusteella valitun työn. """
@@ -157,6 +158,26 @@ Jobs removed by 'clear' are not saved to history. ", ("y", "n"))
         if n == "n":
             print("\n   CLEAR CANCELLED")
 
+    def restore_from_history(self):
+        n = input("\nType the ID of the job you wan't to restore: ")
+        job_found = False
+        temp_hist_log = None
+        with open("hist_log.txt", "rb") as f:
+            temp_hist_log = pickle.load(f, fix_imports=False, encoding="ASCII", errors="strict")
+        for job in temp_hist_log[1:]:
+            if job.job_id == int(n):
+                job_found = True
+                job.status = Tools().get_status(Tools().get_valid_input("Input a new STATUS for restored job:", ("1","2")))
+                temp_hist_log.remove(job)
+                self.current_job_list.append(job)
+                with open("hist_log.txt", "wb") as f:
+                    pickle.dump(temp_hist_log, f, protocol=4, fix_imports=False)
+                print("\n    Job {} succesfully restored from history!".format(n))
+                return
+
+        if not job_found:
+            print("\n    Job id {} not found.".format(n))
+                        
 class Job:
     def __init__(self, prompted_info):
         self.prompted_info = prompted_info
@@ -182,13 +203,14 @@ class Interface:
         # Making report-pdf's
         elif n == "ro":
             MakePDF().make_report(Tools().gimme_my_todo_list(RUNNING_LIST.current_job_list[1:]), "Acceccible Jobs")
-            print("\n    Created a report of all accessible jobs.")
+            print("\n    Created a PDF report of all accessible jobs.")
         elif n == "rl":
             MakePDF().make_report(RUNNING_LIST.current_job_list[1:], "All Jobs")
-            print("\n    Created a report of all jobs.")
+            print("\n    Created a PDF report of all jobs.")
         elif n == "rw":
             MakePDF().make_report([x for x in RUNNING_LIST.current_job_list[1:] if "Waiting" in x.status], "Waiting Jobs")
-            print("\n    Created a report of all waiting jobs.")
+            print("\n    Created a PDF report of all waiting jobs.")
+        # End report-pdf's
 
         elif n == "a":
             RUNNING_LIST.add_job()
@@ -205,6 +227,9 @@ class Interface:
 
         elif n == "clear":
             RUNNING_LIST._clear_job_list()
+
+        elif n == "gh":
+            RUNNING_LIST.restore_from_history()
 
         elif n == "l":
             print("""

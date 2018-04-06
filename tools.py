@@ -4,7 +4,7 @@ class Tools:
 
     def get_valid_input(self, input_string, valid_options):
         """ Ottaa inputin ja kattoo onko se toisena argumenttina annetussa listassa (tuplea käytetään näissä tapauksisssa) 
-        kysyy uudelleen niin kauan kunnes inputti on validi palauttaa annetun inputin kun se on validi"""
+        kysyy uudelleen niin kauan kunnes inputti on validi. Palauttaa validin inputin (string)"""
 
         if valid_options:
             input_string += " ({}) ".format(", ".join(valid_options))
@@ -124,7 +124,7 @@ class Tools:
         return ordered_list
 
     def rivitetty(long_string, row_length):
-        """ Palauttaa lauseen sanat jaettuna listan elementteihin siten että yhdellä rivillä on aina maksimissaa row_length verran merkkejä. How else could this be explained?!"""
+        """ Palauttaa lauseen sanat jaettuna listan elementteihin siten että yhdellä rivillä on aina maksimissaa row_length verran merkkejä."""
         words = long_string.rsplit()
         rows = [[]]
         count = 0

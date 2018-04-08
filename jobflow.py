@@ -1,20 +1,19 @@
-import time, datetime, os, pickle, sys
+import time, datetime, os, pickle, sys, re
 # Own modules:
-from tools import Tools
+from tools import Tools, JobNotFoundError, ActionCancelledError
 from files import Files
 from pdf_generator import MakePDF
 
 Files.check_files()
 
 print(""" 
-       Welcome to:
-       __________.                  
-       \_  ____/ | ______  _  __.  
-        |   _)|  |/  _ \ \/ \/ / 
-        |   \ |  (  <_> )     /  
-        \_  / |__|\____/ \/\_/   
-          \/  I'm Your brain now.
+      ______   __         ______     __     __    
+     /\  ___\ /\ \       /\  __ \   /\ \  _ \ \   
+     \ \  __\ \ \ \____  \ \ \/\ \  \ \ \/ ".\ \  
+      \ \_\    \ (c)Aku\  \ \_____\  \ \__/".~\_\ 
+       \///     \///////   \///////   \///   \/// 
                                   """)
+
 
 class JobList:
     """ Class for managing jobs, Instance of this class is created in the last lines """
@@ -112,6 +111,11 @@ class JobList:
         print("\n    ID {} NOT FOUND".format(input_id))
         
     def show_list(self, job_list):
+
+        if job_list == []:
+            print("\n    No jobs of this kind.")
+            return
+
         print("""
        ID:     ADDED:          PR:    CUSTOMER:           PRODUCT:            AMOUNT:        SHEET:    MATERIAL:         COMMENT:       STATUS:""")
         for i in job_list:
@@ -177,7 +181,64 @@ Jobs removed by 'clear' are not saved to history. ", ("y", "n"))
 
         if not job_found:
             print("\n    Job id {} not found.".format(n))
-                        
+    
+    def move(self, usr_input):
+        """ In the interface, user can input a string starting with mu or md, depending of direction of movement.
+        Next in the string must come the ID of the job, that wan'ts to be moved.
+        An optional third argument is the 'n', which indicates, that the user want's to move the item by
+        a number of times. (this number is asked if the 'n' is detected """
+
+        #Check if we can use that input. If we can, use it.
+        if re.fullmatch("[m][u,d][\d]+[n]?", usr_input):
+
+            # get direction from usr_input
+            direction = usr_input[1]
+
+            # get id from usr_input and if last character is n, then ask how many times user wants to move item
+            id_to_move = None
+            if usr_input[-1] == "n":
+                while True:
+                    how_many_times = input("\nMove {} by :".format("UP" if direction == "u" else "DOWN"))
+                    if how_many_times.isdigit():
+                        how_many_times = int(how_many_times)
+                        break
+                    else:
+                        print("\n    Not a number.")
+
+                id_to_move = int(usr_input[2:-1])
+            else:
+                id_to_move = int(usr_input[2:])
+                how_many_times = 1
+
+            cur_jobs = self.current_job_list
+            try:
+                job_to_move = Tools().get_job_by_id(id_to_move, cur_jobs[1:])
+            except JobNotFoundError:
+                print("\n    Job {} not found".format(id_to_move))
+                return
+
+            index_of_target_position = None
+
+            # Check if user is trying to move job too far (in place of the info object or over OR over the end of the list.) 
+            # stop execution if this is the case
+            if direction == "u":
+                index_of_target_position = cur_jobs.index(job_to_move) - how_many_times
+            if direction == "d":
+                index_of_target_position = cur_jobs.index(job_to_move) + how_many_times
+
+            if index_of_target_position < 1 or index_of_target_position > len(cur_jobs) - 1:
+                print("\n    Cannot move {} by {}".format(id_to_move, how_many_times))
+                return
+
+            index_of_old_position = self.current_job_list.index(job_to_move)
+            cur_jobs.insert(index_of_target_position, cur_jobs.pop(index_of_old_position))
+            
+            print("\n    Job {} succesfully moved {} by {}".format(id_to_move, 
+                "UP" if direction == "u" else "DOWN", how_many_times))
+
+        else:
+            print("\n    move() can't use input:", usr_input)
+
 class Job:
     def __init__(self, prompted_info):
         self.prompted_info = prompted_info
@@ -195,21 +256,25 @@ class Job:
 # Interface:
 class Interface:
     def interface():
+
         n = input("\nEnter command\n>>> ")
         n = n.lower()
+
         if len(n) == 0:
-            pass
+            return
 
         # Making report-pdf's
-        elif n == "ro":
-            MakePDF().make_report(Tools().gimme_my_todo_list(RUNNING_LIST.current_job_list[1:]), "Acceccible Jobs")
-            print("\n    Created a PDF report of all accessible jobs.")
-        elif n == "rl":
-            MakePDF().make_report(RUNNING_LIST.current_job_list[1:], "All Jobs")
-            print("\n    Created a PDF report of all jobs.")
-        elif n == "rw":
-            MakePDF().make_report([x for x in RUNNING_LIST.current_job_list[1:] if "Waiting" in x.status], "Waiting Jobs")
-            print("\n    Created a PDF report of all waiting jobs.")
+        if n[0] == "r" and len(n) == 2:
+            if n[1] == "o":
+                MakePDF().make_report(Tools().gimme_my_todo_list(RUNNING_LIST.current_job_list[1:]), "Acceccible Jobs")
+                print("\n    Created a PDF report of all accessible jobs.")
+            elif n[1] == "l":
+                MakePDF().make_report(RUNNING_LIST.current_job_list[1:], "All Jobs")
+                print("\n    Created a PDF report of all jobs.")
+            elif n[1] == "w":
+                current_list = RUNNING_LIST.current_job_list[1:]
+                MakePDF().make_report([x for x in current_list if "Waiting" in x.status], "Waiting Jobs")
+                print("\n    Created a PDF report of all waiting jobs.")
         # End report-pdf's
 
         elif n == "a":
@@ -219,7 +284,11 @@ class Interface:
             RUNNING_LIST.delete_job()
 
         elif n[0] == "e":
-            RUNNING_LIST.edit_job(n)
+            try:
+                RUNNING_LIST.edit_job(n)
+            except ActionCancelledError:
+                print("\n    Job editing cancelled")
+            
 
         elif n == "q":
             print("\n    Thank you for using Flow. See you soon!")
@@ -231,6 +300,20 @@ class Interface:
         elif n == "gh":
             RUNNING_LIST.restore_from_history()
 
+        elif n == "m":
+            print("""
+                                    
+       _____ _____ _____ _____ _     (O) Show Flow      (A) Add new Job    (#) Show Job-info    (E#P) Edit priority   (MU/D#(N)) Move Up/Down[By]
+      |     |   __|   | |  |  |_|   
+      | | | |   __| | | |  |  |_     (L) Show All       (E(#)) Edit Job    (clear) Clear All    (RL/W/H) PDF-list                                   
+      |_|_|_|_____|_|___|_____|_|  
+                                     (W) Show Waiting   (D) Delete Job     (H) Show History     (GH) Restore Job      (Q) Quit                      
+                                  
+                                                                                                         """)
+
+        elif n[0] == "m":
+            RUNNING_LIST.move(n)
+
         elif n == "l":
             print("""
        ___                _     _         _    _    _   _             _ 
@@ -239,6 +322,7 @@ class Interface:
       \___\___/_|_|_| .__/_\___|\__\___| |____|_/__/\__|_|_||_\__, | (_)
                     |_|                                       |___/     """)      
             RUNNING_LIST.show_list(RUNNING_LIST.current_job_list[1:])
+            return
      
         elif n == "o":
             print("""
@@ -248,6 +332,7 @@ class Interface:
      | (_| | (_| (_|  __/\__ \__ \ | |_) | |  __/ _ 
       \__,_|\___\___\___||___/___/_|_.__/|_|\___|(_) """)
             RUNNING_LIST.show_list(Tools().gimme_my_todo_list(RUNNING_LIST.current_job_list[1:]))
+            return
 
         elif n == "w":
             print("""
@@ -258,6 +343,7 @@ class Interface:
        \/\_/  (____  /__||__| |__|___|  /\___  / (_)(_)(_)
                    \/                 \//_____/           """)
             RUNNING_LIST.show_list([x for x in RUNNING_LIST.current_job_list[1:] if "Waiting" in x.status])
+            return
 
         elif n == "h":
             with open("hist_log.txt", "rb") as f:
@@ -268,22 +354,15 @@ class Interface:
      |  | | .__/  |  \__/ |  \  |  o                   
                                     """)
             RUNNING_LIST.show_list(hist[1:])
+            return
 
-        elif n == "m":
-            print("""
-                                    /--------------------------------------------------------------------------------------------\\
-       _____ _____ _____ _____ _    | (O) Show Flow     | (A) Add new Job   | (#) Show Job-info | (E#P) Edit priority |          |
-      |     |   __|   | |  |  |_|   |-------------------|-------------------|-------------------|---------------------|----------|
-      | | | |   __| | | |  |  |_    | (L) Show All      | (E(#)) Edit Job   | (clear) Clear All | (RL/W/H) PDF-list   |          |
-      |_|_|_|_____|_|___|_____|_|   |-------------------|-------------------|-------------------|---------------------|----------|
-                                    | (W) Show Waiting  | (D) Delete Job    | (H) Show History  | (gh) Restore Job    | (Q) Quit |
-                                    \\--------------------------------------------------------------------------------------------/
-                                                                                                         """)
         elif n.isdigit():
             int_n = int(n)
             RUNNING_LIST.show_job_info(int_n)
+            return
         else:
             print("\n    {} is not a valid input.".format(n))
+            return
 
         RUNNING_LIST.write_pickle_file()
 
@@ -292,4 +371,7 @@ RUNNING_LIST = JobList()
 RUNNING_LIST.get_job_list_from_file()
 
 while True:
-    Interface.interface()
+    try:
+        Interface.interface()
+    except ActionCancelledError as e:
+        print(e.string)

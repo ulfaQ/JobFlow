@@ -1,21 +1,42 @@
 import datetime
 
-class Tools:
+class JobNotFoundError(Exception):
+    pass
 
-    def get_valid_input(self, input_string, valid_options):
-        """ Ottaa inputin ja kattoo onko se toisena argumenttina annetussa listassa (tuplea käytetään näissä tapauksisssa) 
-        kysyy uudelleen niin kauan kunnes inputti on validi. Palauttaa validin inputin (string)"""
+class ActionCancelledError(Exception):
+    def __init__(self):
+        self.string = "\n    Action Cancelled"
+
+class Tools:
+    def get_job_by_id(self, job_id, input_list):
+        for job in input_list:
+            if job.job_id == job_id:
+                return job
+        raise JobNotFoundError
+        
+    def get_valid_input(self, input_string, valid_options=None):
+        """ Ottaa inputin ja kattoo onko se toisena argumenttina annetussa listassa
+            (tuplea käytetään näissä tapauksisssa) 
+            kysyy uudelleen niin kauan kunnes inputti on validi.
+            Palauttaa validin inputin (string)
+        """
 
         if valid_options:
             input_string += " ({}) ".format(", ".join(valid_options))
             response = input(input_string)
 
+            if response == "q":
+                raise ActionCancelledError
+
             while response.lower() not in valid_options:
                 response = input(input_string)
 
         # Jos valid_options == None, kysyy vain kysymyksen(input_string) ja palauttaa vastauksen, sen kummempia validoimatta.
-        else:
+
+        elif valid_options == None:
             response = input(input_string)
+            if response == "q":
+                raise ActionCancelledError
 
         return response
 
@@ -27,11 +48,16 @@ class Tools:
         elif number == "1":
             number = "Ready to Print"
 
+        elif number == "q":
+            raise ActionCancelledError
+
         return number
 
     def add_or_edit_job(self, job, id_input=None, parameter=None):
-        """ Palauttaa prompted info objektin jota käytetään luomaan uusi Job vanhan tilalle (sama objekti mutta vain yhdellä muokatulla parametrillä.
-            if input == "e" kohdassa jobflow.py:n loppupuolella. Kutsutaan tätä funktiota. """
+        """ Palauttaa prompted info objektin jota käytetään luomaan uusi Job vanhan tilalle 
+            (sama objekti mutta vain yhdellä muokatulla parametrillä.
+            if input == "e" kohdassa jobflow.py:n loppupuolella. Kutsutaan tätä funktiota. 
+        """
 
         if job:
             if parameter == None:
@@ -52,10 +78,14 @@ class Tools:
                               Status (7,S) {}
                             Priority (8,P) {}
 
+                              Cancel  (Q)  
+
+
+
              Choose the Parameter to Edit: """.format(job.job_id, job.addedDate, job.customer, job.product, job.amount, job.material, \
                                             job.printing_sheet_size, job.comment, job.status, job.priority), \
-                                            ("1", "2", "3", "4", "5", "6", "7", "8", "a", "c", "s", "p"))
-
+                                            ("1", "2", "3", "4", "5", "6", "7", "8", "a", "c", "s", "p", "q"))
+                
             # Luodaan dictionary josta katsotaan mitä parametria annetulla numerolla/kirjaimella tarkoitetaan
             # inputsissa ensin parametri, sitten get_valid_inputiin syötettävät validit inputit. Jos None, sitten validointia ei tehdä.
             inputs = {
@@ -67,10 +97,10 @@ class Tools:
                     "5" : ["printing_sheet_size", None],
                     "6" : ["comment", None],
                     "c" : ["comment", None],
-                    "7" : ["status", ("1" ,"2")],
+                    "7" : ["status", ("1" ,"2", "q")],
                     "s" : ["status", ("1" ,"2")],
                     "8" : ["priority", ("1" ,"2", "3", "0")],
-                    "p" : ["priority", ("1" ,"2", "3", "0")],
+                    "p" : ["priority", ("1" ,"2", "3", "0")]
                     }
 
             job.prompted_info[inputs[parameter][0]] = self.get_valid_input("\nGive new value for {} : ".format(inputs[parameter][0]), inputs[parameter][1])
@@ -82,15 +112,17 @@ class Tools:
 
         else:
             prompted_info = {
-                    "customer"             : input("Customer: "),         
-                    "product"              : input("Product: "),
-                    "amount"               : input("Amount: "),           
-                    "material"             : input("Material: "),         
-                    "comment"              : input("Comment: "),          
-                    "printing_sheet_size"  : input("Printing_sheet_size: "),
-                    "job_id"               : id_input, # self.info.current_id passed as a second (optional) parameter in jobflow.py add_job()
+                    "customer"             : self.get_valid_input("Customer: ", None),         
+                    "product"              : self.get_valid_input("Product: ", None),
+                    "amount"               : self.get_valid_input("Amount: ", None),           
+                    "material"             : self.get_valid_input("Material: ", None),        
+                    "comment"              : self.get_valid_input("Comment: ", None),          
+                    "printing_sheet_size"  : self.get_valid_input("Printing_sheet_size: ", None),
+                    "job_id"               : id_input,  # self.info.current_id passed as a 
+                                                        # second (optional) parameter in 
+                                                        # jobflow.py add_job()
                     "addedDate"            : datetime.datetime.now().strftime("%d-%m %H:%M"),
-                    "status"               : self.get_status(self.get_valid_input("Status 1=ReadyToPrint, 2=Waiting: ", ("1","2"))),
+                    "status"               : self.get_status(self.get_valid_input("Status 1=ReadyToPrint, 2=Waiting: ", ("1","2","q"))),
                     "priority"             : "0"
                     }
 

@@ -29,13 +29,13 @@ class Files:
             with open("hist_log.txt", "wb") as f:
                 pickle.dump([Files.Info()], f, protocol=4, fix_imports=False)
 
-        # Check if permissions.txt exists, if not, create it.
-        try:
-            with open("permissions.txt", "rb") as f:
-                pass
-        except FileNotFoundError:
-            authenticator = auth.Authenticator()
-            authorizor = auth.Authorizor(authenticator)
-            with open("permissions.txt", "wb") as f:
-                pickle.dump([authenticator, authorizor], f, protocol=4, fix_imports=False)
- 
+#       # Check if permissions.txt exists, if not, create it.
+#       try:
+#           with open("permissions.txt", "rb") as f:
+#               pass
+#       except FileNotFoundError:
+#           authenticator = auth.Authenticator()
+#           authorizor = auth.Authorizor(authenticator)
+#           with open("permissions.txt", "wb") as f:
+#               pickle.dump([authenticator, authorizor], f, protocol=4, fix_imports=False)
+#

@@ -155,7 +155,16 @@ class Tools:
 
         return ordered_list
 
-    def rivitetty(long_string, row_length):
+    def search(self, input_list, search_term):
+        temp_list = list()
+        search_term = search_term.lower()
+        for job in input_list:
+            if search_term in job.customer.lower():
+                temp_list.append(job)
+
+        return temp_list
+
+    def rivitetty(self, long_string, row_length):
         """ Palauttaa lauseen sanat jaettuna listan elementteihin siten että yhdellä rivillä on aina maksimissaa row_length verran merkkejä."""
         words = long_string.rsplit()
         rows = [[]]
@@ -171,3 +180,5 @@ class Tools:
         for i in rows:
             joined_rows.append(" ".join(i))
         return joined_rows
+
+tools = Tools()

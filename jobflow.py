@@ -1,11 +1,10 @@
 import time, datetime, os, pickle, sys, re, traceback
 
 # Own modules:
-from tools import Tools, JobNotFoundError, ActionCancelledError
+from tools import tools, JobNotFoundError, ActionCancelledError
 from files import Files
 from pdf_generator import MakePDF
 from interface import interface, start
-import auth
 Files.check_files()
 
 print(""" 
@@ -23,6 +22,8 @@ class JobList:
     def __init__(self):
         self.current_job_list = []
         self.info = None # Tähän haetaan info-objekti tiedostosta. Sisältää muuta infoa joka halutaan säilyttää
+        self.history = None
+
 
     # Funktio jolla haetaan työt tiedostosta.
     def get_job_list_from_file(self):
@@ -37,11 +38,37 @@ class JobList:
         with open("current_job_list.txt", "wb") as f:
             pickle.dump(self.current_job_list, f, protocol=4, fix_imports=False)
 
+    def get_hist(self):
+        with open("hist_log.txt", "rb") as f:
+            hist = pickle.load(f, fix_imports=False, encoding="ASCII", errors="strict")
+        return hist
+
+    def copy_from_hist(self):
+        hist = self.get_hist()
+        job_to_copy = input("\nType the the id of the job you wan't to copy: ")
+        temp_job = None
+        if job_to_copy.isdigit():
+            job_to_copy = int(job_to_copy)
+        else:
+            print("\n    {} is not valid input. ID can only contain integers.".format(id_to_remove))
+            return
+        for job in hist[1:]:
+            if job.job_id == job_to_copy:
+                temp_job = job
+                temp_job.addedDate = datetime.datetime.now().strftime("%d-%m %H:%M")
+                temp_job.status = tools.get_status(tools.get_valid_input("\nGive new value for STATUS", ("1","2")))
+                self.current_job_list.append(temp_job)
+                return
+
+    def write_hist(self, new_hist):
+        with open("hist_log.txt", "wb") as f:
+            pickle.dump(new_hist, f, protocol=4, fix_imports=False)
+
     # Funktio töiden lisäämiseen. 
     def add_job(self):
 
         print("\n    ENTERING NEW JOB\n")
-        self.current_job_list.append(Job(Tools().add_or_edit_job(None, self.info.current_id)))
+        self.current_job_list.append(Job(tools.add_or_edit_job(None, self.info.current_id)))
         print("\n   Job {} added!".format(self.info.current_id))
         self.info.current_id += 1
 
@@ -52,25 +79,22 @@ class JobList:
         if id_to_remove.isdigit():
             id_to_remove = int(id_to_remove)
         else:
-            print("    {} is not valid input. ID can only contain integers.".format(id_to_remove))
+            print("\n    {} is not valid input. ID can only contain integers.".format(id_to_remove))
             return
 
         n = None
         for i in self.current_job_list[1:]:
             if i.job_id == id_to_remove:
 
-                n = Tools().get_valid_input("Are you sure you wan't to remove {} : {} : {} : {} : {} ?".format("ID: ", i.job_id, i.customer, i.product, i.amount), ("y", "n")).lower()
+                n = tools.get_valid_input("Are you sure you wan't to remove {} : {} : {} : {} : {} ?".format("ID: ", i.job_id, i.customer, i.product, i.amount), ("y", "n")).lower()
 
                 if n == "y":
                     self.current_job_list.remove(i)
                     i.status = ("DELETED {}".format(datetime.datetime.now().strftime("%d-%m-%Y %H:%M")))
                     #Tallennetaan hist_logiin poistettu työ
-                    temp_hist_log = None
-                    with open("hist_log.txt", "rb") as f:
-                        temp_hist_log = pickle.load(f, fix_imports=False, encoding="ASCII", errors="strict")
+                    temp_hist_log = self.get_hist()
                     temp_hist_log.append(i)
-                    with open("hist_log.txt", "wb") as f:
-                        pickle.dump(temp_hist_log, f, protocol=4, fix_imports=False)
+                    self.write_hist(temp_hist_log)
                     print("\n    Job succesfully deleted!")
                     return
 
@@ -106,7 +130,7 @@ class JobList:
             if i.job_id == input_id:
                 index_of_the_job = self.current_job_list.index(i)
                 # Tässä korvataan vanha objekti uudella vastaavalla (johon on vaihdettu haluttu parametri)
-                self.current_job_list[index_of_the_job] = Job(Tools().add_or_edit_job(i, None, parameter))
+                self.current_job_list[index_of_the_job] = Job(tools.add_or_edit_job(i, None, parameter))
                 return
 
         print("\n    ID {} NOT FOUND".format(input_id))
@@ -156,7 +180,7 @@ class JobList:
                 print(  "                                                      ---------------------------{}".format("-".ljust(len(i.status), "-")))
 
     def _clear_job_list(self):
-        n = Tools().get_valid_input("Are you sure you wan't to remove all jobs from current_job_list permanently. \
+        n = tools.get_valid_input("Are you sure you wan't to remove all jobs from current_job_list permanently. \
 Jobs removed by 'clear' are not saved to history. ", ("y", "n"))
         if n == "y":
             self.current_job_list[1:] = []
@@ -166,17 +190,14 @@ Jobs removed by 'clear' are not saved to history. ", ("y", "n"))
     def restore_from_history(self):
         n = input("\nType the ID of the job you wan't to restore: ")
         job_found = False
-        temp_hist_log = None
-        with open("hist_log.txt", "rb") as f:
-            temp_hist_log = pickle.load(f, fix_imports=False, encoding="ASCII", errors="strict")
+        temp_hist_log = get_hist()
         for job in temp_hist_log[1:]:
             if job.job_id == int(n):
                 job_found = True
-                job.status = Tools().get_status(Tools().get_valid_input("Input a new STATUS for restored job:", ("1","2")))
+                job.status = tools.get_status(tools.get_valid_input("Input a new STATUS for restored job:", ("1","2")))
                 temp_hist_log.remove(job)
                 self.current_job_list.append(job)
-                with open("hist_log.txt", "wb") as f:
-                    pickle.dump(temp_hist_log, f, protocol=4, fix_imports=False)
+                self.write_hist(temp_hist_log)
                 print("\n    Job {} succesfully restored from history!".format(n))
                 return
 
@@ -213,7 +234,7 @@ Jobs removed by 'clear' are not saved to history. ", ("y", "n"))
 
             cur_jobs = self.current_job_list
             try:
-                job_to_move = Tools().get_job_by_id(id_to_move, cur_jobs[1:])
+                job_to_move = tools.get_job_by_id(id_to_move, cur_jobs[1:])
             except JobNotFoundError:
                 print("\n    Job {} not found".format(id_to_move))
                 return

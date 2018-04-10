@@ -1,6 +1,5 @@
-from tools import Tools, JobNotFoundError, ActionCancelledError 
-import auth, pickle, traceback
-
+from tools import tools, JobNotFoundError, ActionCancelledError 
+import auth, pickle, traceback, getpass
 # Haetaan per_man objekti tiedostosta. Sisältää käytettävät authorizator ja authenticator objektit
 
 per_man = None
@@ -34,7 +33,7 @@ def start(input_list):
     # Pistetään ohjelma pyörimään
 
     try:
-        login_or_view = Tools().get_valid_input("\n   (l)ogin or (v)iew?", ("l", "v"))
+        login_or_view = tools.get_valid_input("\n   (l)ogin or (v)iew?", ("l", "v"))
         if login_or_view == "l":
             per_man.login(RUNNING_LIST)                                                           
         elif login_or_view == "v":                                                        
@@ -50,6 +49,9 @@ def interface(RUNNING_LIST, username=None):
     n = input("\n{}Enter command\n>>> ".format("<"+username+"> " if username else ""))
     n = n.lower()
 
+    if not per_man.authenticator.is_logged_in(username):
+        username = None
+
     try:
         if len(n) == 0:
             return
@@ -57,7 +59,7 @@ def interface(RUNNING_LIST, username=None):
         # Making report-pdf's
         if n[0] == "r" and len(n) == 2:
             if n[1] == "o":
-                MakePDF().make_report(Tools().gimme_my_todo_list(RUNNING_LIST.current_job_list[1:]), "Acceccible Jobs")
+                MakePDF().make_report(tools.gimme_my_todo_list(RUNNING_LIST.current_job_list[1:]), "Acceccible Jobs")
                 print("\n    Created a PDF report of all accessible jobs.")
             elif n[1] == "l":
                 MakePDF().make_report(RUNNING_LIST.current_job_list[1:], "All Jobs")
@@ -85,27 +87,43 @@ def interface(RUNNING_LIST, username=None):
             sys.exit()
 
         elif n == "clear":
-            per_man.authorizor.check_permission("use", username)
+            per_man.authorizor.check_permission("admin", username)
             RUNNING_LIST._clear_job_list()
 
         elif n == "gh":
             per_man.authorizor.check_permission("use", username)
             RUNNING_LIST.restore_from_history()           
 
+        elif n == "ch":
+            per_man.authorizor.check_permission("use", username)
+            RUNNING_LIST.copy_from_hist()           
+
         elif n == "m":
             print("""
                                     
-       _____ _____ _____ _____ _     (O) Show Flow      (A) Add new Job   (#) Show Job-info   (E#P) Edit priority   (MU/D#[N]) Move Up/Down[By]   (admin) Administration
-      |     |   __|   | |  |  |_|   
-      | | | |   __| | | |  |  |_     (L) Show All       (E(#)) Edit Job   (clear) Clear All   (RL/W/H) PDF-list     (login) Login                 (Q) Quit             
-      |_|_|_|_____|_|___|_____|_|  
-                                     (W) Show Waiting   (D) Delete Job    (H) Show History    (GH) Restore Job      (logout) Logout                              
-                                  
-                                                                                                         """)
+       :::::::::::::::::::::::::::   (O) Show Flow          (A) Add new Job      (E#P) Edit priority      (CH) Copy from hist.     (login) Login        
+        _____ _____ _____ _____ _                                                                                                                             
+       |     |   __|   | |  |  |_|   (L) Show All           (E(#)) Edit Job      (H) Show History         (GH) Restore from hist.  (logout) Logout                        
+       | | | |   __| | | |  |  |_                                                                                                                             
+       |_|_|_|_____|_|___|_____|_|   (W) Show Waiting       (D) Delete Job       (S[H]) Search[hist]      (RL/W/H) Print PDF-list  (admin) Admin-menu                          
+       ___________________________                                                                                                               
+       l_________________________l   (#) Show Job-info      (MU/D#[N]) Move \u25B2/\u25BC  (clear) Clear list       (Q) Quit                           
+
+                                                                                                         
+       """)
 
         elif n[0] == "m":
             per_man.authorizor.check_permission("use", username)
             RUNNING_LIST.move(n)
+
+        elif n == "s":
+            search_term = input("\n Search for: ")
+            RUNNING_LIST.show_list(tools.search(RUNNING_LIST.current_job_list[1:], search_term))
+
+        elif n == "sh":
+            search_term = input("\n Search for: ")
+            hist = RUNNING_LIST.get_hist()
+            RUNNING_LIST.show_list(tools.search(hist[1:], search_term))
 
         elif n == "l":
             print("""
@@ -124,7 +142,7 @@ def interface(RUNNING_LIST, username=None):
       / _` |/ __/ __/ _ \/ __/ __| | '_ \| |/ _ \(_)
      | (_| | (_| (_|  __/\__ \__ \ | |_) | |  __/ _ 
       \__,_|\___\___\___||___/___/_|_.__/|_|\___|(_) """)
-            RUNNING_LIST.show_list(Tools().gimme_my_todo_list(RUNNING_LIST.current_job_list[1:]))
+            RUNNING_LIST.show_list(tools.gimme_my_todo_list(RUNNING_LIST.current_job_list[1:]))
             return
 
         elif n == "w":
@@ -155,7 +173,7 @@ def interface(RUNNING_LIST, username=None):
             return
 
         elif n == "login":
-            per_man.login(username)
+            per_man.login(RUNNING_LIST, username)
             return
 
         elif n == "admin":
@@ -165,6 +183,8 @@ def interface(RUNNING_LIST, username=None):
 
         elif n == "logout":
             per_man.authenticator.logout(username)
+            username = None
+            return
 
         else:
             print("\n    {} is not a valid command. See (m) for Menu.".format(n))
@@ -203,7 +223,7 @@ class PermissionManager:
         if not username:
             try:
                 username = input("Username: ")
-                password = input("Password: ")
+                password = getpass.getpass("Password: ")
                 self.authenticator.login(username, password)
             except auth.InvalidUsername as e:
                 print("Invalid username", e)
@@ -225,7 +245,8 @@ class PermissionManager:
             print("\n    You are currently logged in as", username)
 
     def admin_menu(self, username):
-        n = Tools().get_valid_input("""
+
+        n = tools.get_valid_input("""
         ADMIN MENU: 
 
         add user         = au
@@ -256,7 +277,7 @@ class PermissionManager:
             self.authorizor.view_permissions()
         elif n == "de":
             user_to_del = input("\nType username you wan't to delete: ")
-            sure = Tools().get_valid_input("\nAre you sure you wan't to delete user: {}".format(user_to_del), ("y", "n"))
+            sure = tools.get_valid_input("\nAre you sure you wan't to delete user: {}".format(user_to_del), ("y", "n"))
 
             self.authenticator.del_user(user_to_del) if sure == "y" else self.admin_menu(username)
 

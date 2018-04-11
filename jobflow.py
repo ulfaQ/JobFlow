@@ -8,12 +8,13 @@ from interface import interface, start
 Files.check_files()
 
 print(""" 
-      ______   __         ______     __     __    
-     /\  ___\ /\ \       /\  __ \   /\ \  _ \ \   
-     \ \  __\ \ \ \____  \ \ \/\ \  \ \ \/ ".\ \  
-      \ \_\    \ (c)Aku\  \ \_____\  \ \__/".~\_\ 
-       \///     \///////   \///////   \///   \/// 
-                                  """)
+                          ______   __         ______     __     __    
+                         /\  ___\ /\ \       /\  __ \   /\ \  _ \ \   
+                         \ \  __\ \ \ \____  \ \ \/\ \  \ \ \/ ".\ \  
+                          \ \_\    \ \     \  \ \_____\  \ \__/".~\_\ 
+#####################################################################
+---------------------------------------------------------------------
+                     """)
 
 class JobList:
     """ Class for managing jobs, Instance of this class is created in the last lines """
@@ -23,7 +24,6 @@ class JobList:
         self.current_job_list = []
         self.info = None # Tähän haetaan info-objekti tiedostosta. Sisältää muuta infoa joka halutaan säilyttää
         self.history = None
-
 
     # Funktio jolla haetaan työt tiedostosta.
     def get_job_list_from_file(self):
@@ -57,8 +57,10 @@ class JobList:
                 temp_job = job
                 temp_job.addedDate = datetime.datetime.now().strftime("%d-%m %H:%M")
                 temp_job.status = tools.get_status(tools.get_valid_input("\nGive new value for STATUS", ("1","2")))
+                temp_job.job_id = self.info.current_id
+                self.info.current_id += 1
                 self.current_job_list.append(temp_job)
-                return
+                break
 
     def write_hist(self, new_hist):
         with open("hist_log.txt", "wb") as f:
@@ -154,7 +156,7 @@ class JobList:
         """.ljust(14)[:14]"""
         for i in self.current_job_list[1:]:
             if i.job_id == id_to_show:
-                rivitetty_comment = Tools.rivitetty(i.comment, len(i.status) + 13)
+                rivitetty_comment = tools.rivitetty(i.comment, len(i.status) + 13)
                 print("""                 
                                                        {}            
                                                       ---------------------------{}  
@@ -190,7 +192,7 @@ Jobs removed by 'clear' are not saved to history. ", ("y", "n"))
     def restore_from_history(self):
         n = input("\nType the ID of the job you wan't to restore: ")
         job_found = False
-        temp_hist_log = get_hist()
+        temp_hist_log = self.get_hist()
         for job in temp_hist_log[1:]:
             if job.job_id == int(n):
                 job_found = True
@@ -278,7 +280,6 @@ class Job:
         self.priority = prompted_info.get("priority") 
 
 # Pistetään ohjelma pyörimään
-
 RUNNING_LIST = JobList()
 RUNNING_LIST.get_job_list_from_file()
 

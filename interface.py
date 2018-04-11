@@ -283,5 +283,3 @@ class PermissionManager:
 
         self.write_perm_file()
         self.admin_menu(username)
-
-

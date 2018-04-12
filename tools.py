@@ -40,18 +40,18 @@ class Tools:
 
         return response
 
-    def get_status(self, number):
+#   def get_status(self, number):
 
-        if number == "2":
-            number = "Waiting for: {}".format(input("Waiting for what?: "))
+#       if number == "2":
+#           number = "Waiting for: {}".format(input("Waiting for what?: "))
 
-        elif number == "1":
-            number = "Ready to Print"
+#       elif number == "1":
+#           number = "Ready to Print"
 
-        elif number == "q":
-            raise ActionCancelledError
+#       elif number == "q":
+#           raise ActionCancelledError
 
-        return number
+#       return number
 
     def add_or_edit_job(self, job, id_input=None, parameter=None):
         """ Palauttaa prompted info objektin jota käytetään luomaan uusi Job vanhan tilalle 
@@ -104,7 +104,7 @@ class Tools:
                     }
 
             job.prompted_info[inputs[parameter][0]] = self.get_valid_input("\nGive new value for {} : ".format(inputs[parameter][0]), inputs[parameter][1])
-            job.prompted_info["status"] = self.get_status(job.prompted_info["status"])
+#            job.prompted_info["status"] = self.get_status(job.prompted_info["status"])
 
             print("\n   ", inputs[parameter][0].upper(), "succesfully updated!")
 
@@ -122,10 +122,9 @@ class Tools:
                                                         # second (optional) parameter in 
                                                         # jobflow.py add_job()
                     "addedDate"            : datetime.datetime.now().strftime("%d-%m %H:%M"),
-                    "status"               : self.get_status(self.get_valid_input("Status 1=ReadyToPrint, 2=Waiting: ", ("1","2","q"))),
+                    "status"               : self.get_valid_input("Status 1=ReadyToPrint, 2=Waiting: ", ("1","2","q")),
                     "priority"             : "0"
                     }
-
 
             return prompted_info
 
@@ -176,6 +175,7 @@ class Tools:
                 rows.append([])
                 count += 1
                 rows[count].append(i)
+
         joined_rows = []
         for i in rows:
             joined_rows.append(" ".join(i))

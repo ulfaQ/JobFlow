@@ -56,7 +56,7 @@ class JobList:
             if job.job_id == job_to_copy:
                 temp_job = job
                 temp_job.addedDate = datetime.datetime.now().strftime("%d-%m %H:%M")
-                temp_job.status = tools.get_status(tools.get_valid_input("\nGive new value for STATUS", ("1","2")))
+                temp_job.status = tools.get_valid_input("\nGive new value for STATUS", ("1","2"))
                 temp_job.job_id = self.info.current_id
                 self.info.current_id += 1
                 self.current_job_list.append(temp_job)
@@ -196,7 +196,7 @@ Jobs removed by 'clear' are not saved to history. ", ("y", "n"))
         for job in temp_hist_log[1:]:
             if job.job_id == int(n):
                 job_found = True
-                job.status = tools.get_status(tools.get_valid_input("Input a new STATUS for restored job:", ("1","2")))
+                job.status = tools.get_valid_input("Input a new STATUS for restored job:", ("1","2"))
                 temp_hist_log.remove(job)
                 self.current_job_list.append(job)
                 self.write_hist(temp_hist_log)
@@ -273,11 +273,26 @@ class Job:
         self.amount = prompted_info.get("amount")
         self.material = prompted_info.get("material")
         self.printing_sheet_size = prompted_info.get("printing_sheet_size")
-        self.status = prompted_info.get("status")
+
+        self._status = prompted_info.get("status")
+        self.status = self._status
+
         self.comment = prompted_info.get("comment")
         self.addedDate = prompted_info.get("addedDate")
         self.job_id = prompted_info.get("job_id")
         self.priority = prompted_info.get("priority") 
+
+    def _set_status(self, status_nro):
+        if status_nro == "1":
+            self._status = "Ready to Print"
+        elif status_nro == "2":
+            n = input("\nWaiting for what: ")
+            self._status = "Waiting for: " + n
+
+    def _get_status(self):
+        return self._status
+
+    status = property(_get_status, _set_status)
 
 # Pistetään ohjelma pyörimään
 RUNNING_LIST = JobList()

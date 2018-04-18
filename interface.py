@@ -100,6 +100,7 @@ def interface(RUNNING_LIST, username=None):
 
         elif n == "m":
             print("""
+        You are logged in as: {}
                                     
        :::::::::::::::::::::::::::   (O) Show Flow          (A) Add new Job      (E#P) Edit priority      (CH) Copy from hist.     (login) Login        
         _____ _____ _____ _____ _                                                                                                                             
@@ -110,7 +111,7 @@ def interface(RUNNING_LIST, username=None):
        l_________________________l   (#) Show Job-info      (MU/D#[N]) Move \u25B2/\u25BC  (clear) Clear list       (Q) Quit                           
 
                                                                                                          
-       """)
+       """.format(username))
 
         elif n[0] == "m":
             per_man.authorizor.check_permission("use", username)

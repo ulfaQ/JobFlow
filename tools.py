@@ -12,6 +12,7 @@ class Tools:
         for job in input_list:
             if job.job_id == job_id:
                 return job
+
         raise JobNotFoundError
         
     def get_valid_input(self, input_string, valid_options=None):
@@ -129,7 +130,7 @@ class Tools:
             return prompted_info
 
     def gimme_my_todo_list(self, list_of_jobs):
-        """ This arranges all priority-status 1-3 jobs by priority."""
+        """ This returns a list containing only "Ready to Print" jobs This arranges all priority-status 1-3 jobs by priority."""
 
         acceccible_jobs = [x for x in list_of_jobs if "Waiting" not in x.status]
         ordered_list = list()
@@ -156,10 +157,24 @@ class Tools:
 
     def search(self, input_list, search_term):
         temp_list = list()
-        search_term = search_term.lower()
+        term_list = search_term.split(" ")
         for job in input_list:
-            if search_term in job.customer.lower():
+            job_string = job.customer.lower() + " " + job.product.lower()
+            terms_found = 0
+            for term in term_list:
+                if term in job_string:
+                    terms_found += 1
+            if terms_found == len(term_list):
                 temp_list.append(job)
+
+# Etsii työt jotka sisältää mitkä tahansa annetuista sanoista
+#       temp_list = list()
+#       for term in search_term.split(" "):
+#           for job in input_list:
+#               job_string = job.customer.lower() + " " + job.product.lower()
+#               
+#               if term in job_string:
+#                   temp_list.append(job)
 
         return temp_list
 

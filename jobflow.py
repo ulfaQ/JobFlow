@@ -52,6 +52,7 @@ class JobList:
         else:
             print("\n    {} is not valid input. ID can only contain integers.".format(id_to_remove))
             return
+
         for job in hist[1:]:
             if job.job_id == job_to_copy:
                 temp_job = job
@@ -273,10 +274,10 @@ class Job:
         self.amount = prompted_info.get("amount")
         self.material = prompted_info.get("material")
         self.printing_sheet_size = prompted_info.get("printing_sheet_size")
-
+        # Status in prompted_info is always 1 or 2
         self._status = prompted_info.get("status")
+        # Setting status to corresponding value with property (Ready../Waiting...)
         self.status = self._status
-
         self.comment = prompted_info.get("comment")
         self.addedDate = prompted_info.get("addedDate")
         self.job_id = prompted_info.get("job_id")
